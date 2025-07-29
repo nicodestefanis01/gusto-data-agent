@@ -1,5 +1,5 @@
 """
-Gusto Data Agent - Demo
+Gusto Risk Data Agent - Demo
 ======================
 AI-powered SQL generation for Gusto data warehouse
 """
@@ -106,7 +106,7 @@ def generate_data(sql):
         ]
 
 # Main App UI
-st.title("🏢 Gusto Data Agent")
+st.title("🏢 Gusto Risk Data Agent")
 st.subheader("AI-powered SQL generation for Gusto data warehouse")
 
 # Demo mode notice
