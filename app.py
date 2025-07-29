@@ -11,32 +11,22 @@ from datetime import datetime
 st.set_page_config(page_title="Gusto Data Agent", page_icon="🏢", layout="wide")
 
 def generate_sql(query):
-<<<<<<< HEAD
     """Generate SQL based on natural language query - Mock implementation"""
     q = query.lower()
     
-=======
-    q = query.lower()
->>>>>>> 5d3ea4924ee8e99ba7ee8299af546148a56bf072
     if "credit delinquencies" in q and "30 days" in q:
         return """SELECT c.company_name, c.state, cd.delinquency_date, cd.amount, cd.status
 FROM bi.companies c
 JOIN bi.credit_delinquencies cd ON c.company_id = cd.company_id
 WHERE cd.delinquency_date >= CURRENT_DATE - INTERVAL '30 days'
 ORDER BY cd.delinquency_date DESC;"""
-<<<<<<< HEAD
     
-=======
->>>>>>> 5d3ea4924ee8e99ba7ee8299af546148a56bf072
     elif "employee count" in q:
         return """SELECT company_name, state, employee_count
 FROM bi.companies
 ORDER BY employee_count DESC
 LIMIT 10;"""
-<<<<<<< HEAD
     
-=======
->>>>>>> 5d3ea4924ee8e99ba7ee8299af546148a56bf072
     elif "california" in q or "risk" in q:
         return """SELECT c.company_name, c.state, COUNT(cd.company_id) AS risk_score
 FROM bi.companies c
@@ -44,7 +34,6 @@ LEFT JOIN bi.credit_delinquencies cd ON c.company_id = cd.company_id
 WHERE c.state = 'CA'
 GROUP BY c.company_id, c.company_name, c.state
 ORDER BY risk_score DESC;"""
-<<<<<<< HEAD
     
     elif "payments" in q or "revenue" in q:
         return """SELECT company_name, SUM(payment_amount) as total_payments
@@ -62,35 +51,25 @@ JOIN bi.penalty_groups pg ON pc.penalty_group_id = pg.id
 GROUP BY c.company_name, pg.penalty_type
 ORDER BY penalty_count DESC;"""
     
-=======
->>>>>>> 5d3ea4924ee8e99ba7ee8299af546148a56bf072
     else:
         return """SELECT company_name, state, employee_count
 FROM bi.companies
 LIMIT 100;"""
 
 def generate_data(sql):
-<<<<<<< HEAD
     """Generate mock data based on SQL query"""
-=======
->>>>>>> 5d3ea4924ee8e99ba7ee8299af546148a56bf072
     if "credit_delinquencies" in sql:
         return [
             {"company_name": "TechStart Inc", "state": "CA", "delinquency_date": "2024-01-15", "amount": 15000, "status": "Active"},
             {"company_name": "DataFlow LLC", "state": "NY", "delinquency_date": "2024-01-12", "amount": 8500, "status": "Active"},
-<<<<<<< HEAD
             {"company_name": "CloudOps Corp", "state": "TX", "delinquency_date": "2024-01-08", "amount": 12750, "status": "Active"},
             {"company_name": "SecureNet Systems", "state": "FL", "delinquency_date": "2024-01-05", "amount": 22000, "status": "Resolved"},
             {"company_name": "ModernApps Co", "state": "WA", "delinquency_date": "2024-01-03", "amount": 9800, "status": "Active"}
-=======
-            {"company_name": "CloudOps Corp", "state": "TX", "delinquency_date": "2024-01-08", "amount": 12750, "status": "Active"}
->>>>>>> 5d3ea4924ee8e99ba7ee8299af546148a56bf072
         ]
     elif "employee_count" in sql:
         return [
             {"company_name": "MegaCorp Industries", "state": "CA", "employee_count": 2847},
             {"company_name": "Global Tech Solutions", "state": "NY", "employee_count": 1923},
-<<<<<<< HEAD
             {"company_name": "Innovation Labs", "state": "TX", "employee_count": 1456},
             {"company_name": "Enterprise Systems", "state": "IL", "employee_count": 1234},
             {"company_name": "Digital Dynamics", "state": "WA", "employee_count": 987}
@@ -117,14 +96,10 @@ def generate_data(sql):
             {"company_name": "RegulationIgnore LLC", "penalty_type": "Tax Violation", "penalty_count": 8},
             {"company_name": "LatePayment Inc", "penalty_type": "Payment Default", "penalty_count": 6},
             {"company_name": "RuleBreaker Co", "penalty_type": "Compliance Issue", "penalty_count": 4}
-=======
-            {"company_name": "Innovation Labs", "state": "TX", "employee_count": 1456}
->>>>>>> 5d3ea4924ee8e99ba7ee8299af546148a56bf072
         ]
     else:
         return [
             {"company_name": "Sample Corp", "state": "CA", "employee_count": 145},
-<<<<<<< HEAD
             {"company_name": "Demo LLC", "state": "NY", "employee_count": 87},
             {"company_name": "Test Industries", "state": "TX", "employee_count": 203},
             {"company_name": "Example Co", "state": "FL", "employee_count": 156}
@@ -138,21 +113,11 @@ st.subheader("AI-powered SQL generation for Gusto data warehouse")
 st.info("🎮 **Demo Mode**: Showcasing interface with realistic mock data")
 
 # Create two columns for layout
-=======
-            {"company_name": "Demo LLC", "state": "NY", "employee_count": 87}
-        ]
-
-st.title("🏢 Gusto Data Agent")
-st.subheader("AI-powered SQL generation for Gusto data warehouse")
-st.info("🎮 Demo Mode: Showcasing interface with realistic mock data")
-
->>>>>>> 5d3ea4924ee8e99ba7ee8299af546148a56bf072
 col1, col2 = st.columns([2, 1])
 
 with col1:
     st.subheader("💬 Ask Your Data Question")
     
-<<<<<<< HEAD
     # Example queries
     examples = [
         "Show me all companies with credit delinquencies in the last 30 days",
@@ -163,36 +128,20 @@ with col1:
     ]
     
     # Quick example buttons
-=======
-    examples = [
-        "Show me all companies with credit delinquencies in the last 30 days",
-        "List top 10 companies by employee count", 
-        "Find companies in California with high risk scores"
-    ]
-    
->>>>>>> 5d3ea4924ee8e99ba7ee8299af546148a56bf072
     for i, example in enumerate(examples):
         if st.button(f"📝 {example}", key=i):
             st.session_state.query = example
     
-<<<<<<< HEAD
     # Text input for custom queries
     query = st.text_area(
         "Enter your question:",
         value=st.session_state.get('query', ''),
         placeholder="e.g., Show me companies with credit delinquencies",
         height=100
-=======
-    query = st.text_area(
-        "Enter your question:",
-        value=st.session_state.get('query', ''),
-        placeholder="e.g., Show me companies with credit delinquencies"
->>>>>>> 5d3ea4924ee8e99ba7ee8299af546148a56bf072
     )
     
     if st.button("🚀 Generate SQL & Execute", type="primary"):
         if query:
-<<<<<<< HEAD
             with st.spinner("Generating SQL and fetching results..."):
                 # Generate SQL
                 sql = generate_sql(query)
@@ -228,26 +177,12 @@ with col1:
                             fig = st.line_chart(data=df[chart_col])
                 else:
                     st.warning("No results found for your query.")
-=======
-            sql = generate_sql(query)
-            st.subheader("📝 Generated SQL")
-            st.code(sql, language="sql")
-            
-            results = generate_data(sql)
-            st.subheader("📊 Results")
-            df = pd.DataFrame(results)
-            st.dataframe(df)
-            
-            csv = df.to_csv(index=False)
-            st.download_button("📥 Download CSV", csv, "results.csv")
->>>>>>> 5d3ea4924ee8e99ba7ee8299af546148a56bf072
         else:
             st.warning("Please enter a query")
 
 with col2:
     st.subheader("ℹ️ About")
     st.markdown("""
-<<<<<<< HEAD
     **Gusto Data Agent** converts natural language into SQL queries for analyzing Gusto warehouse data.
     
     **Features:**
@@ -285,21 +220,3 @@ with col2:
 # Footer
 st.markdown("---")
 st.markdown("**🏢 Built for Gusto Data Team** | Demo Version with Mock Data")
-=======
-    **Gusto Data Agent** converts natural language into SQL queries.
-    
-    **Features:**
-    - 🧠 AI-powered SQL generation
-    - 📊 Gusto warehouse tables  
-    - 🔒 Read-only safety
-    - 💾 CSV export
-    """)
-    
-    st.subheader("🗄️ Tables")
-    tables = ["bi.companies", "bi.credit_delinquencies", "bi.gusto_employees"]
-    for table in tables:
-        st.text(f"• {table}")
-
-st.markdown("---")
-st.markdown("**🏢 Built for Gusto Data Team**")
->>>>>>> 5d3ea4924ee8e99ba7ee8299af546148a56bf072
