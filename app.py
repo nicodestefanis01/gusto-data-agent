@@ -95,14 +95,47 @@ class RedshiftConnection:
         self.password = os.getenv("REDSHIFT_PASSWORD")
         self.port = int(os.getenv("REDSHIFT_PORT", 5439))
         self.conn = None
+        self._connection_tested = False
+        self._connection_works = False
         
     def is_configured(self) -> bool:
         """Check if all required credentials are available"""
         return all([self.host, self.database, self.user, self.password])
     
+    def test_connection(self) -> bool:
+        """Test connection to Redshift (with timeout and error handling)"""
+        if self._connection_tested:
+            return self._connection_works
+            
+        if not self.is_configured():
+            self._connection_tested = True
+            self._connection_works = False
+            return False
+            
+        try:
+            # Use a shorter timeout for public deployments
+            conn = psycopg2.connect(
+                host=self.host,
+                database=self.database,
+                user=self.user,
+                password=self.password,
+                port=self.port,
+                connect_timeout=10  # 10 second timeout
+            )
+            conn.close()
+            self._connection_tested = True
+            self._connection_works = True
+            return True
+        except Exception as e:
+            self._connection_tested = True
+            self._connection_works = False
+            # Store the error for debugging
+            self._connection_error = str(e)
+            return False
+    
     def connect(self) -> bool:
         """Establish connection to Redshift"""
-        if not self.is_configured():
+        if not self.test_connection():
             return False
             
         try:
@@ -111,18 +144,17 @@ class RedshiftConnection:
                 database=self.database,
                 user=self.user,
                 password=self.password,
-                port=self.port
+                port=self.port,
+                connect_timeout=10
             )
             return True
         except Exception as e:
-            st.error(f"Failed to connect to Redshift: {str(e)}")
             return False
     
     def execute_query(self, sql: str) -> Dict[str, Any]:
         """Execute SQL query and return results"""
-        if not self.conn:
-            if not self.connect():
-                return {"success": False, "error": "Database connection failed"}
+        if not self.connect():
+            return {"success": False, "error": "Database connection failed"}
         
         try:
             cursor = self.conn.cursor()
@@ -199,7 +231,7 @@ Generate a SQL query for: {natural_query}"""
             return {
                 "success": True,
                 "sql": sql_query,
-                "explanation": f"Generated SQL for: {natural_query}"
+                "explanation": f"AI-generated SQL for: {natural_query}"
             }
             
         except Exception as e:
@@ -249,24 +281,51 @@ LIMIT 100;"""
             "explanation": f"Template SQL generated for: {query} (using real Gusto schema)"
         }
 
-def generate_mock_data(sql: str) -> List[Dict]:
-    """Generate realistic mock data for demo purposes"""
-    if "credit_delinquencies" in sql:
+def generate_realistic_demo_data(sql: str, query: str) -> List[Dict]:
+    """Generate realistic demo data based on the SQL and query"""
+    q = query.lower()
+    
+    if "credit delinquencies" in q or "delinquent" in sql.lower():
         return [
-            {"company_name": "TechStart Inc", "state": "CA", "delinquency_date": "2024-01-15", "amount": 15000, "status": "Active"},
-            {"company_name": "DataFlow LLC", "state": "NY", "delinquency_date": "2024-01-12", "amount": 8500, "status": "Active"},
-            {"company_name": "CloudOps Corp", "state": "TX", "delinquency_date": "2024-01-08", "amount": 12750, "status": "Active"}
+            {"company_name": "TechStart Solutions", "filing_state": "CA", "debit_date": "2024-01-15", "debit_amount_attempted": 15000, "delinquent_status": "Active"},
+            {"company_name": "DataFlow Analytics", "filing_state": "NY", "debit_date": "2024-01-12", "debit_amount_attempted": 8500, "delinquent_status": "Active"},
+            {"company_name": "CloudOps Systems", "filing_state": "TX", "debit_date": "2024-01-08", "debit_amount_attempted": 12750, "delinquent_status": "Resolved"},
+            {"company_name": "InnovateTech Corp", "filing_state": "CA", "debit_date": "2024-01-05", "debit_amount_attempted": 22000, "delinquent_status": "Active"},
+            {"company_name": "GreenField Logistics", "filing_state": "FL", "debit_date": "2024-01-03", "debit_amount_attempted": 5200, "delinquent_status": "Active"}
         ]
-    elif "employee_count" in sql:
+    elif "employee" in q or "number_active_employees" in sql.lower():
         return [
-            {"company_name": "MegaCorp Industries", "state": "CA", "employee_count": 2847},
-            {"company_name": "Global Tech Solutions", "state": "NY", "employee_count": 1923},
-            {"company_name": "Innovation Labs", "state": "TX", "employee_count": 1456}
+            {"company_name": "MegaCorp Industries", "filing_state": "CA", "number_active_employees": 2847},
+            {"company_name": "Global Tech Solutions", "filing_state": "NY", "number_active_employees": 1923},
+            {"company_name": "Innovation Labs Inc", "filing_state": "TX", "number_active_employees": 1456},
+            {"company_name": "Future Systems LLC", "filing_state": "WA", "number_active_employees": 891},
+            {"company_name": "Dynamic Solutions", "filing_state": "FL", "number_active_employees": 743},
+            {"company_name": "NextGen Technologies", "filing_state": "CA", "number_active_employees": 652},
+            {"company_name": "Quantum Dynamics", "filing_state": "MA", "number_active_employees": 589},
+            {"company_name": "Stellar Innovations", "filing_state": "CO", "number_active_employees": 401}
+        ]
+    elif "penalty" in q or "penalty_amount" in sql.lower():
+        return [
+            {"company_name": "Apex Manufacturing", "agency_name": "California EDD", "total_penalty_amount": 12500, "status": "Open"},
+            {"company_name": "Metro Services LLC", "agency_name": "Texas TWC", "total_penalty_amount": 8900, "status": "Under Review"},
+            {"company_name": "Pioneer Industries", "agency_name": "New York DOL", "total_penalty_amount": 15600, "status": "Resolved"},
+            {"company_name": "Coastal Enterprises", "agency_name": "Florida DEO", "total_penalty_amount": 6750, "status": "Open"}
+        ]
+    elif "california" in q or "risk" in q:
+        return [
+            {"company_name": "Silicon Valley Startups", "filing_state": "CA", "risk_score": 3},
+            {"company_name": "Bay Area Technologies", "filing_state": "CA", "risk_score": 2},
+            {"company_name": "Los Angeles Media Co", "filing_state": "CA", "risk_score": 1},
+            {"company_name": "San Diego Biotech", "filing_state": "CA", "risk_score": 0},
+            {"company_name": "Sacramento Solutions", "filing_state": "CA", "risk_score": 0}
         ]
     else:
         return [
-            {"company_name": "Sample Corp", "state": "CA", "employee_count": 145},
-            {"company_name": "Demo LLC", "state": "NY", "employee_count": 87}
+            {"company_name": "Acme Corporation", "filing_state": "CA", "number_active_employees": 245},
+            {"company_name": "Demo Industries", "filing_state": "NY", "number_active_employees": 189},
+            {"company_name": "Example LLC", "filing_state": "TX", "number_active_employees": 156},
+            {"company_name": "Sample Solutions", "filing_state": "FL", "number_active_employees": 98},
+            {"company_name": "Test Technologies", "filing_state": "WA", "number_active_employees": 67}
         ]
 
 def check_system_status():
@@ -274,10 +333,13 @@ def check_system_status():
     db = RedshiftConnection()
     sql_gen = SQLGenerator()
     
+    redshift_works = db.test_connection()
+    
     return {
         "redshift_configured": db.is_configured(),
+        "redshift_accessible": redshift_works,
         "openai_available": sql_gen.available,
-        "demo_mode": not (db.is_configured() and sql_gen.available)
+        "demo_mode": not (redshift_works and sql_gen.available)
     }
 
 # Main App
@@ -289,15 +351,14 @@ def main():
     status = check_system_status()
     
     # Display status banner
-    if status["demo_mode"]:
-        if not status["redshift_configured"] and not status["openai_available"]:
-            st.warning("🎮 **Demo Mode**: No Redshift or OpenAI credentials configured. Using mock data.")
-        elif not status["redshift_configured"]:
-            st.warning("⚠️ **Partial Mode**: OpenAI available but no Redshift credentials. SQL generation works, using mock data.")
-        elif not status["openai_available"]:
-            st.warning("⚠️ **Partial Mode**: Redshift configured but no OpenAI key. Using mock SQL generation with real data.")
+    if status["redshift_accessible"] and status["openai_available"]:
+        st.success("✅ **Full Production Mode**: Connected to Redshift with AI-powered SQL generation")
+    elif status["openai_available"] and not status["redshift_accessible"]:
+        st.info("🎯 **AI Demo Mode**: OpenAI-powered SQL generation with realistic sample data (Redshift accessible only from internal network)")
+    elif status["redshift_accessible"] and not status["openai_available"]:
+        st.warning("⚠️ **Database Mode**: Connected to Redshift with template SQL generation")
     else:
-        st.success("✅ **Production Mode**: Connected to Redshift with AI-powered SQL generation")
+        st.info("🎮 **Demo Mode**: Template SQL with sample data for sharing and demonstration")
     
     # Configuration sidebar
     with st.sidebar:
@@ -305,30 +366,29 @@ def main():
         
         st.subheader("📊 Database Status")
         if status["redshift_configured"]:
-            st.success("✅ Redshift configured")
+            if status["redshift_accessible"]:
+                st.success("✅ Redshift connected")
+            else:
+                st.warning("⚠️ Redshift configured but not accessible")
+                st.info("💡 Database may only be accessible from internal network")
         else:
             st.error("❌ Redshift not configured")
-            with st.expander("💡 How to configure Redshift"):
-                st.code("""
-# Set environment variables:
-REDSHIFT_HOST=your-cluster.redshift.amazonaws.com
-REDSHIFT_DATABASE=your_database
-REDSHIFT_USERNAME=your_username  
-REDSHIFT_PASSWORD=your_password
-REDSHIFT_PORT=5439
-                """)
         
-        st.subheader("🤖 AI Status")
+        st.subheader("🤖 AI Status") 
         if status["openai_available"]:
-            st.success("✅ OpenAI configured")
+            st.success("✅ OpenAI connected")
         else:
             st.error("❌ OpenAI not configured")
-            with st.expander("💡 How to configure OpenAI"):
-                st.code("OPENAI_API_KEY=sk-...")
         
         st.subheader("🗄️ Available Tables")
-        for table_name in TABLE_SCHEMAS.keys():
+        for table_name in list(TABLE_SCHEMAS.keys())[:8]:  # Show first 8 tables
             st.text(f"• {table_name}")
+        if len(TABLE_SCHEMAS) > 8:
+            st.text(f"... and {len(TABLE_SCHEMAS) - 8} more")
+        
+        if not status["redshift_accessible"]:
+            st.markdown("---")
+            st.info("🔐 **For Internal Use**: Connect to Gusto VPN for full database access")
     
     # Main interface
     col1, col2 = st.columns([2, 1])
@@ -341,8 +401,8 @@ REDSHIFT_PORT=5439
             "Show me all companies with credit delinquencies in the last 30 days",
             "List top 20 companies by employee count", 
             "Find companies in California with risk scores",
-            "Show recent payment activity by company",
-            "List penalty cases from the last quarter"
+            "Show companies with penalty cases and amounts",
+            "List recent payment activity by company"
         ]
         
         for i, example in enumerate(examples):
@@ -370,18 +430,18 @@ REDSHIFT_PORT=5439
                         
                         # Execute query
                         with st.spinner("Executing query..."):
-                            if status["redshift_configured"]:
+                            if status["redshift_accessible"]:
                                 # Use real database
                                 db = RedshiftConnection()
                                 exec_result = db.execute_query(result["sql"])
                             else:
-                                # Use mock data
-                                mock_data = generate_mock_data(result["sql"])
+                                # Use realistic demo data
+                                demo_data = generate_realistic_demo_data(result["sql"], query)
                                 exec_result = {
                                     "success": True,
-                                    "data": mock_data,
-                                    "row_count": len(mock_data),
-                                    "execution_time_seconds": 0.1
+                                    "data": demo_data,
+                                    "row_count": len(demo_data),
+                                    "execution_time_seconds": 0.15
                                 }
                         
                         if exec_result["success"]:
@@ -394,8 +454,10 @@ REDSHIFT_PORT=5439
                             with col_b:
                                 st.metric("Time", f"{exec_result['execution_time_seconds']:.2f}s")
                             with col_c:
-                                mode = "Real Data" if status["redshift_configured"] else "Mock Data"
-                                st.metric("Mode", mode)
+                                if status["redshift_accessible"]:
+                                    st.metric("Source", "Real Data")
+                                else:
+                                    st.metric("Source", "Demo Data")
                             
                             # Display data
                             if exec_result["data"]:
@@ -404,10 +466,11 @@ REDSHIFT_PORT=5439
                                 
                                 # Download option
                                 csv = df.to_csv(index=False)
+                                filename = f"gusto_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
                                 st.download_button(
                                     label="📥 Download CSV",
                                     data=csv,
-                                    file_name=f"gusto_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                                    file_name=filename,
                                     mime="text/csv"
                                 )
                                 
@@ -437,27 +500,29 @@ REDSHIFT_PORT=5439
         st.markdown("""
         **Gusto Data Agent** converts natural language into SQL queries for analyzing Gusto warehouse data.
         
-        **Production Features:**
+        **Features:**
         - 🧠 AI-powered SQL generation via OpenAI
-        - 🔗 Direct Redshift database connectivity
-        - 📊 Access to all Gusto warehouse tables
+        - 📊 Real Gusto warehouse table schemas  
+        - 🔗 Database connectivity (when accessible)
         - 🔒 Read-only database safety
         - 💾 CSV export capabilities
         - 📈 Quick data visualizations
-        - 🎮 Demo mode fallback
         """)
         
-        st.subheader("🚀 Getting Started")
-        if status["demo_mode"]:
-            st.markdown("""
-            **To enable production mode:**
-            1. Get Redshift credentials from your data team
-            2. Set environment variables for database connection
-            3. Add your OpenAI API key
-            4. Restart the application
-            """)
+        if status["redshift_accessible"]:
+            st.success("🎯 **Connected to real Gusto data!**")
         else:
-            st.success("✅ Production mode is active!")
+            st.info("🎮 **Demo mode with realistic sample data**")
+        
+        st.subheader("🚀 Key Benefits")
+        benefits = [
+            "🚀 **No more manual SQL** for common requests",
+            "📊 **Instant data access** for analysts", 
+            "👥 **Shareable interface** for team collaboration",
+            "🔒 **Safe read-only** warehouse access"
+        ]
+        for benefit in benefits:
+            st.markdown(f"- {benefit}")
 
 if __name__ == "__main__":
     main() 
