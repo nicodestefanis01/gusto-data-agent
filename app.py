@@ -144,6 +144,7 @@ def generate_sql_with_ai(query: str) -> str:
         5. For time-based queries, use DATE_TRUNC for aggregations
         6. For time-based aggregations, ALWAYS add ORDER BY time_column DESC to show most recent first
         7. For monthly/weekly/daily aggregations, sort by the time period in descending order
+        8. IMPORTANT: For bi_reporting.gusto_payments_and_losses table, ALWAYS use event_debit_date as the date column for time-based queries
         
         Generate SQL:
         """
