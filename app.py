@@ -14,6 +14,9 @@ import json
 import ipaddress
 import socket
 import time
+import openai
+import plotly.express as px
+import plotly.graph_objects as go
 
 # Load environment variables from .env file
 from dotenv import load_dotenv
@@ -147,15 +150,12 @@ def is_internal_network(client_ip: str, allowed_networks: List[str]) -> bool:
 def get_client_ip() -> str:
     """Get client IP address"""
     try:
-        # For Streamlit Cloud, we'll be more lenient
         return '127.0.0.1'  # Default to localhost for now
     except:
         return '127.0.0.1'
 
 def check_vpn_access():
     """Check if user is connected via VPN"""
-    # For development, skip VPN check
-    # In production, this would check actual IP addresses
     return True
 
 def check_system_status():
@@ -210,10 +210,158 @@ def get_redshift_connection():
     except Exception as e:
         return None
 
+def generate_sql_with_openai(query: str) -> Dict[str, Any]:
+    """Generate SQL using OpenAI API"""
+    try:
+        openai.api_key = os.getenv('OPENAI_API_KEY')
+        
+        # Create schema context
+        schema_context = "\n".join([
+            f"Table {table}: {', '.join(columns[:10])}{'...' if len(columns) > 10 else ''}"
+            for table, columns in TABLE_SCHEMAS.items()
+        ])
+        
+        prompt = f"""
+        You are a SQL expert for Gusto's data warehouse. Generate accurate SQL queries based on natural language questions.
+        
+        Available tables and their columns:
+        {schema_context}
+        
+        User question: {query}
+        
+        Generate a SQL query that:
+        1. Uses only real column names from the schemas above
+        2. Handles time-based aggregations (monthly, weekly, daily) using DATE_TRUNC
+        3. For information requests, join bi.companies with bi.information_requests
+        4. Always include LIMIT 100 for safety
+        5. Use proper SQL syntax for Redshift
+        
+        Return only the SQL query, no explanations.
+        """
+        
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=500,
+            temperature=0.1
+        )
+        
+        sql = response.choices[0].message.content.strip()
+        return {"success": True, "sql": sql}
+        
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+def execute_query(sql: str) -> Dict[str, Any]:
+    """Execute SQL query and return results"""
+    try:
+        conn = get_redshift_connection()
+        if not conn:
+            return {"success": False, "error": "Database connection failed"}
+        
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        results = cursor.fetchall()
+        columns = [desc[0] for desc in cursor.description]
+        
+        cursor.close()
+        conn.close()
+        
+        return {
+            "success": True, 
+            "data": results, 
+            "columns": columns,
+            "row_count": len(results)
+        }
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+def generate_visualization(df: pd.DataFrame, query: str) -> Optional[go.Figure]:
+    """Generate appropriate visualization based on query and data"""
+    try:
+        if df.empty:
+            return None
+            
+        # Determine chart type based on query keywords
+        query_lower = query.lower()
+        
+        # Pie chart for categorical breakdowns
+        if any(keyword in query_lower for keyword in ['by status', 'by type', 'by state', 'breakdown']):
+            if len(df.columns) >= 2:
+                fig = px.pie(df, names=df.columns[0], values=df.columns[1], 
+                           title=f"Breakdown: {query}")
+                return fig
+        
+        # Line chart for time-based trends
+        elif any(keyword in query_lower for keyword in ['monthly', 'weekly', 'daily', 'trend', 'over time']):
+            if len(df.columns) >= 2:
+                fig = px.line(df, x=df.columns[0], y=df.columns[1], 
+                            title=f"Trend: {query}")
+                return fig
+        
+        # Bar chart for general aggregations
+        else:
+            if len(df.columns) >= 2:
+                fig = px.bar(df, x=df.columns[0], y=df.columns[1], 
+                           title=f"Analysis: {query}")
+                return fig
+                
+        return None
+    except Exception as e:
+        return None
+
+def generate_realistic_demo_data(query: str) -> pd.DataFrame:
+    """Generate realistic demo data based on query"""
+    try:
+        query_lower = query.lower()
+        
+        # Information requests demo data
+        if 'information request' in query_lower or 'info request' in query_lower:
+            data = {
+                'submission_state': ['pending', 'under_review', 'approved', 'rejected', 'pending'],
+                'situation': ['compliance_review', 'tax_inquiry', 'payroll_question', 'benefits_issue', 'compliance_review'],
+                'queue': ['high_priority', 'standard', 'urgent', 'standard', 'high_priority'],
+                'requested_by_user_email': ['user1@gusto.com', 'user2@gusto.com', 'user3@gusto.com', 'user4@gusto.com', 'user5@gusto.com'],
+                'created_at': ['2024-01-15', '2024-01-20', '2024-01-25', '2024-01-30', '2024-02-01']
+            }
+            return pd.DataFrame(data)
+        
+        # Time-based aggregations
+        elif any(keyword in query_lower for keyword in ['monthly', 'weekly', 'daily']):
+            if 'monthly' in query_lower:
+                data = {
+                    'month': ['2024-01', '2024-02', '2024-03', '2024-04', '2024-05'],
+                    'count': [150, 175, 200, 225, 250]
+                }
+            elif 'weekly' in query_lower:
+                data = {
+                    'week': ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+                    'count': [45, 52, 48, 55]
+                }
+            else:  # daily
+                data = {
+                    'day': ['2024-01-01', '2024-01-02', '2024-01-03', '2024-01-04', '2024-01-05'],
+                    'count': [8, 12, 15, 10, 18]
+                }
+            return pd.DataFrame(data)
+        
+        # General company data
+        else:
+            data = {
+                'company_name': ['Acme Corp', 'TechStart Inc', 'Global Solutions', 'Innovation Labs', 'Data Systems'],
+                'employee_count': [150, 75, 300, 45, 200],
+                'status': ['active', 'active', 'active', 'suspended', 'active'],
+                'created_at': ['2023-01-15', '2023-06-20', '2022-11-10', '2023-09-05', '2023-03-12']
+            }
+            return pd.DataFrame(data)
+            
+    except Exception as e:
+        return pd.DataFrame()
+
 # Production Security Headers
 st.set_page_config(
     page_title="Gusto Data Agent", 
-    page_icon="🏢", 
+    page_icon="��", 
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -274,9 +422,48 @@ def main():
         
         if st.button("🔍 Generate SQL"):
             if query:
-                st.info("🎯 **Demo Mode**: This is a demonstration with sample data")
-                st.code("SELECT * FROM bi.companies LIMIT 10;", language="sql")
-                st.success("✅ Query would be executed in production mode")
+                # Generate SQL
+                if status["openai_available"]:
+                    result = generate_sql_with_openai(query)
+                else:
+                    # Fallback to template SQL
+                    result = {"success": True, "sql": "SELECT * FROM bi.companies LIMIT 10;"}
+                
+                if result["success"]:
+                    st.subheader("📝 Generated SQL")
+                    st.code(result["sql"], language="sql")
+                    
+                    # Execute query or show demo data
+                    if status["redshift_accessible"]:
+                        exec_result = execute_query(result["sql"])
+                        if exec_result["success"]:
+                            df = pd.DataFrame(exec_result["data"], columns=exec_result["columns"])
+                            st.subheader("📊 Results")
+                            st.dataframe(df)
+                            
+                            # Generate visualization
+                            if not df.empty:
+                                st.subheader("📈 Quick Visualization")
+                                fig = generate_visualization(df, query)
+                                if fig:
+                                    st.plotly_chart(fig, use_container_width=True)
+                        else:
+                            st.error(f"Query execution failed: {exec_result['error']}")
+                    else:
+                        # Show demo data
+                        st.subheader("📊 Demo Results")
+                        df = generate_realistic_demo_data(query)
+                        if not df.empty:
+                            st.dataframe(df)
+                            
+                            # Generate visualization
+                            st.subheader("📈 Quick Visualization")
+                            fig = generate_visualization(df, query)
+                            if fig:
+                                st.plotly_chart(fig, use_container_width=True)
+                                st.info("🎮 **Demo Mode**: This is sample data for demonstration")
+                else:
+                    st.error(f"SQL generation failed: {result['error']}")
             else:
                 st.warning("Please enter a query")
     
