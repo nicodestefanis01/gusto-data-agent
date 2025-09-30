@@ -213,25 +213,67 @@ def create_visualization(df: pd.DataFrame, query: str):
     date_like_columns = ['date', 'time', 'created', 'updated', 'month', 'week', 'day', 'year', 'quarter']
     is_date_column = any(date_word in first_col.lower() for date_word in date_like_columns)
     
-    # Time-based queries - ALWAYS use line charts
+    # Time-based queries - Enhanced line charts with multiple groupings
     if is_time_based or is_date_column:
         if len(df.columns) >= 2:
             x_col = df.columns[0]
             y_col = df.columns[1] if len(df.columns) > 1 else df.columns[0]
             
-            # Sort data by x-axis for proper line chart
-            try:
-                df_sorted = df.sort_values(by=x_col)
-                fig = px.line(df_sorted, x=x_col, y=y_col, title=f"Time Series: {query}")
-                fig.update_layout(
-                    xaxis_title=x_col,
-                    yaxis_title=y_col,
-                    hovermode='x unified'
-                )
-                return fig
-            except:
-                fig = px.line(df, x=x_col, y=y_col, title=f"Time Series: {query}")
-                return fig
+            # Check if we have a third column for grouping (e.g., by company, by status, etc.)
+            if len(df.columns) >= 3:
+                group_col = df.columns[2]  # Third column is usually the grouping
+                
+                # Sort data by x-axis for proper line chart
+                try:
+                    df_sorted = df.sort_values(by=x_col)
+                    
+                    # Create line chart with different lines for each group
+                    fig = px.line(df_sorted, 
+                                x=x_col, 
+                                y=y_col, 
+                                color=group_col,
+                                title=f"Time Series by {group_col}: {query}",
+                                markers=True)
+                    
+                    fig.update_layout(
+                        xaxis_title=x_col,
+                        yaxis_title=y_col,
+                        hovermode='x unified',
+                        legend_title=group_col
+                    )
+                    
+                    # Add markers for better visibility
+                    fig.update_traces(marker=dict(size=6))
+                    
+                    return fig
+                except Exception as e:
+                    # Fallback to simple line chart if grouping fails
+                    try:
+                        df_sorted = df.sort_values(by=x_col)
+                        fig = px.line(df_sorted, x=x_col, y=y_col, title=f"Time Series: {query}")
+                        fig.update_layout(
+                            xaxis_title=x_col,
+                            yaxis_title=y_col,
+                            hovermode='x unified'
+                        )
+                        return fig
+                    except:
+                        fig = px.line(df, x=x_col, y=y_col, title=f"Time Series: {query}")
+                        return fig
+            else:
+                # Single line for time series without grouping
+                try:
+                    df_sorted = df.sort_values(by=x_col)
+                    fig = px.line(df_sorted, x=x_col, y=y_col, title=f"Time Series: {query}")
+                    fig.update_layout(
+                        xaxis_title=x_col,
+                        yaxis_title=y_col,
+                        hovermode='x unified'
+                    )
+                    return fig
+                except:
+                    fig = px.line(df, x=x_col, y=y_col, title=f"Time Series: {query}")
+                    return fig
     
     # Categorical breakdowns - use pie charts
     if any(word in query_lower for word in ['by', 'breakdown', 'distribution', 'count', 'percentage', 'share']):
