@@ -289,6 +289,31 @@ def main():
         else:
             st.warning("⚠️ Database not accessible")
     
+    # Available Tables Section
+    with st.expander("📊 Available Tables & Schemas", expanded=False):
+        st.markdown("### 🗄️ Database Tables")
+        
+        for table_name, columns in TABLE_SCHEMAS.items():
+            with st.expander(f"**{table_name}** ({len(columns)} columns)", expanded=False):
+                # Show first 10 columns
+                display_columns = columns[:10]
+                st.markdown(f"**Columns:** {', '.join(display_columns)}")
+                
+                if len(columns) > 10:
+                    st.markdown(f"*... and {len(columns) - 10} more columns*")
+                
+                # Show sample query
+                if "companies" in table_name.lower():
+                    st.code("SELECT * FROM bi.companies LIMIT 5", language="sql")
+                elif "employees" in table_name.lower():
+                    st.code("SELECT * FROM bi.gusto_employees LIMIT 5", language="sql")
+                elif "payments" in table_name.lower():
+                    st.code("SELECT * FROM bi_reporting.gusto_payments_and_losses LIMIT 5", language="sql")
+                elif "information" in table_name.lower():
+                    st.code("SELECT * FROM bi.information_requests LIMIT 5", language="sql")
+                else:
+                    st.code(f"SELECT * FROM {table_name} LIMIT 5", language="sql")
+    
     # Main interface
     st.header("💬 Ask a Question")
     
