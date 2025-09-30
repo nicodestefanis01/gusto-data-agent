@@ -1,0 +1,26 @@
+name: Deploy to Streamlit Cloud
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.9
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    - name: Test app
+      run: |
+        python -c "import streamlit; print('Streamlit version:', streamlit.__version__)"
+        python -c "import pandas; print('Pandas version:', pandas.__version__)"
+        python -c "import plotly; print('Plotly version:', plotly.__version__)"

@@ -1,32 +1,10 @@
-# Core dependencies
-openai>=1.0.0
+# Streamlit Cloud Requirements
+streamlit>=1.28.0
 pandas>=1.5.0
 psycopg2-binary>=2.9.0
-
-# CLI and utilities
-click>=8.0.0
 python-dotenv>=0.19.0
-
-# Data export/processing
-tabulate>=0.9.0
-openpyxl>=3.0.0
-
-# Development and testing
-pytest>=7.0.0
-pytest-mock>=3.8.0
-black>=22.0.0
-flake8>=5.0.0
-
-# Optional: for advanced features
-sqlparse>=0.4.0
-rich>=12.0.0
-
-# Web application dependencies
-streamlit>=1.28.0
 plotly>=5.17.0
 altair>=5.0.0
-
-# Additional web utilities
 requests>=2.31.0
 urllib3>=2.0.0
-boto3>=1.28.0
+openai>=1.0.0
