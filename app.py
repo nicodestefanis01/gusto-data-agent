@@ -31,6 +31,53 @@ except ImportError:
     # Fallback to regular environment variables
     pass
 
+
+# Table schemas for all Gusto warehouse tables
+TABLE_SCHEMAS = {
+    "bi.companies": [
+        "id", "name", "domain", "employee_count", "created_at", "updated_at",
+        "company_type", "industry", "location", "status", "current_flag",
+        "dbt_incremental_ts", "etl_insert_ts", "etl_update_ts"
+    ],
+    "bi.credit_delinquencies": [
+        "id", "company_id", "delinquency_date", "amount", "status", "created_at",
+        "updated_at", "current_flag", "dbt_incremental_ts", "etl_insert_ts", "etl_update_ts"
+    ],
+    "bi.gusto_employees": [
+        "id", "company_id", "first_name", "last_name", "email", "hire_date",
+        "termination_date", "status", "created_at", "updated_at", "current_flag",
+        "dbt_incremental_ts", "etl_insert_ts", "etl_update_ts"
+    ],
+    "bi.information_requests": [
+        "id", "resource_id", "resource_type", "submission_state", "situation",
+        "queue", "company_id", "requested_by_user_email", "hide_from_review_queue",
+        "created_at", "current_flag", "updated_at", "dbt_incremental_ts",
+        "etl_insert_ts", "etl_update_ts"
+    ],
+    "bi.penalty_cases": [
+        "id", "company_id", "penalty_type", "amount", "status", "case_date",
+        "created_at", "updated_at", "current_flag", "dbt_incremental_ts",
+        "etl_insert_ts", "etl_update_ts"
+    ],
+    "bi.penalty_groups": [
+        "id", "name", "description", "created_at", "updated_at", "current_flag",
+        "dbt_incremental_ts", "etl_insert_ts", "etl_update_ts"
+    ],
+    "bi_reporting.gusto_payments_and_losses": [
+        "id", "company_id", "payment_amount", "loss_amount", "transaction_date",
+        "created_at", "updated_at", "current_flag", "dbt_incremental_ts",
+        "etl_insert_ts", "etl_update_ts"
+    ],
+    "bi.nacha_entries": [
+        "id", "company_id", "entry_amount", "entry_date", "status", "created_at",
+        "updated_at", "current_flag", "dbt_incremental_ts", "etl_insert_ts", "etl_update_ts"
+    ],
+    "zenpayroll_production_no.session_events": [
+        "id", "user_id", "session_id", "event_type", "event_data", "created_at",
+        "updated_at", "current_flag", "dbt_incremental_ts", "etl_insert_ts", "etl_update_ts"
+    ]
+}
+
 # VPN Security Functions
 def is_internal_network(client_ip: str, allowed_networks: List[str]) -> bool:
     """Check if client IP is in allowed internal networks"""
