@@ -18,6 +18,7 @@ import socket
 from dotenv import load_dotenv
 load_dotenv()
 
+
 # Streamlit Cloud Configuration
 try:
     from streamlit_cloud_config import get_cloud_config
@@ -30,6 +31,11 @@ try:
 except ImportError:
     # Fallback to regular environment variables
     pass
+except Exception as e:
+    # Handle any other errors gracefully
+    print(f"Warning: Cloud config error: {e}")
+    pass
+
 
 
 # Table schemas for all Gusto warehouse tables
