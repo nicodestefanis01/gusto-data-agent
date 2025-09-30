@@ -73,6 +73,48 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Rest of the app content (keeping the original structure)
+
+def check_system_status():
+    """Check the status of all system components"""
+    status = {
+        "redshift_accessible": False,
+        "openai_available": False,
+        "redshift_error": None,
+        "openai_error": None
+    }
+    
+    # Check Redshift connection
+    try:
+        conn = get_redshift_connection()
+        if conn:
+            conn.close()
+            status["redshift_accessible"] = True
+    except Exception as e:
+        status["redshift_error"] = str(e)
+    
+    # Check OpenAI API
+    try:
+        if os.getenv('OPENAI_API_KEY'):
+            status["openai_available"] = True
+    except Exception as e:
+        status["openai_error"] = str(e)
+    
+    return status
+
+def get_redshift_connection():
+    """Get Redshift database connection"""
+    try:
+        conn = psycopg2.connect(
+            host=os.getenv('REDSHIFT_HOST'),
+            database=os.getenv('REDSHIFT_DATABASE'),
+            user=os.getenv('REDSHIFT_USERNAME'),
+            password=os.getenv('REDSHIFT_PASSWORD'),
+            port=os.getenv('REDSHIFT_PORT', '5439')
+        )
+        return conn
+    except Exception as e:
+        return None
+
 def main():
     # Check VPN access first
     check_vpn_access()
