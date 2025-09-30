@@ -142,6 +142,8 @@ def generate_sql_with_ai(query: str) -> str:
         3. Add LIMIT 100 to prevent large results
         4. Use proper SQL syntax for Redshift
         5. For time-based queries, use DATE_TRUNC for aggregations
+        6. For time-based aggregations, ALWAYS add ORDER BY time_column DESC to show most recent first
+        7. For monthly/weekly/daily aggregations, sort by the time period in descending order
         
         Generate SQL:
         """
@@ -201,17 +203,37 @@ def create_visualization(df: pd.DataFrame, query: str):
     # Determine chart type based on query and data
     query_lower = query.lower()
     
-    # Time-based queries
-    if any(word in query_lower for word in ['monthly', 'weekly', 'daily', 'trend', 'over time']):
+    # Enhanced time-based detection
+    time_keywords = ['monthly', 'weekly', 'daily', 'trend', 'over time', 'volumes', 'by month', 'by week', 'by day', 'time series', 'chronological']
+    is_time_based = any(word in query_lower for word in time_keywords)
+    
+    # Check if first column looks like a date/time column
+    first_col = df.columns[0] if len(df.columns) > 0 else ""
+    date_like_columns = ['date', 'time', 'created', 'updated', 'month', 'week', 'day', 'year', 'quarter']
+    is_date_column = any(date_word in first_col.lower() for date_word in date_like_columns)
+    
+    # Time-based queries - ALWAYS use line charts
+    if is_time_based or is_date_column:
         if len(df.columns) >= 2:
             x_col = df.columns[0]
             y_col = df.columns[1] if len(df.columns) > 1 else df.columns[0]
             
-            fig = px.line(df, x=x_col, y=y_col, title=f"Trend: {query}")
-            return fig
+            # Sort data by x-axis for proper line chart
+            try:
+                df_sorted = df.sort_values(by=x_col)
+                fig = px.line(df_sorted, x=x_col, y=y_col, title=f"Time Series: {query}")
+                fig.update_layout(
+                    xaxis_title=x_col,
+                    yaxis_title=y_col,
+                    hovermode='x unified'
+                )
+                return fig
+            except:
+                fig = px.line(df, x=x_col, y=y_col, title=f"Time Series: {query}")
+                return fig
     
-    # Categorical breakdowns
-    if any(word in query_lower for word in ['by', 'breakdown', 'distribution', 'count']):
+    # Categorical breakdowns - use pie charts
+    if any(word in query_lower for word in ['by', 'breakdown', 'distribution', 'count', 'percentage', 'share']):
         if len(df.columns) >= 2:
             x_col = df.columns[0]
             y_col = df.columns[1] if len(df.columns) > 1 else df.columns[0]
@@ -219,7 +241,7 @@ def create_visualization(df: pd.DataFrame, query: str):
             fig = px.pie(df, names=x_col, values=y_col, title=f"Breakdown: {query}")
             return fig
     
-    # Default bar chart
+    # Default bar chart for other cases
     if len(df.columns) >= 2:
         x_col = df.columns[0]
         y_col = df.columns[1] if len(df.columns) > 1 else df.columns[0]
