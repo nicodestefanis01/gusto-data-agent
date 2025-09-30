@@ -78,19 +78,30 @@ def check_system_status():
     """Check the status of all system components"""
     status = {
         "redshift_accessible": False,
+        "redshift_configured": False,
         "openai_available": False,
         "redshift_error": None,
         "openai_error": None
     }
     
+    # Check if Redshift is configured
+    redshift_configured = all([
+        os.getenv('REDSHIFT_HOST'),
+        os.getenv('REDSHIFT_DATABASE'),
+        os.getenv('REDSHIFT_USERNAME'),
+        os.getenv('REDSHIFT_PASSWORD')
+    ])
+    status["redshift_configured"] = redshift_configured
+    
     # Check Redshift connection
-    try:
-        conn = get_redshift_connection()
-        if conn:
-            conn.close()
-            status["redshift_accessible"] = True
-    except Exception as e:
-        status["redshift_error"] = str(e)
+    if redshift_configured:
+        try:
+            conn = get_redshift_connection()
+            if conn:
+                conn.close()
+                status["redshift_accessible"] = True
+        except Exception as e:
+            status["redshift_error"] = str(e)
     
     # Check OpenAI API
     try:
