@@ -14,7 +14,6 @@ import json
 import ipaddress
 import socket
 import time
-from functools import lru_cache
 
 # Load environment variables from .env file
 from dotenv import load_dotenv
