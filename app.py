@@ -63,9 +63,13 @@ def get_client_ip() -> str:
         return "127.0.0.1"
 
 def check_vpn_access():
-    """Check if user is on VPN"""
+    """Check if user is on VPN - disabled for local development"""
     try:
-        vpn_required = os.getenv('VPN_REQUIRED', 'true').lower() == 'true'
+        # For local development, always allow access
+        if os.getenv('LOCAL_DEVELOPMENT', 'true').lower() == 'true':
+            return True
+            
+        vpn_required = os.getenv('VPN_REQUIRED', 'false').lower() == 'true'
         if not vpn_required:
             return True
             
