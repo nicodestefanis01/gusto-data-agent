@@ -399,23 +399,88 @@ def main():
     # Check system status
     status = check_system_status()
     
+    # Force real data mode - disable demo mode
+    st.session_state.use_demo_data = False
+    
     # Sidebar
     with st.sidebar:
         st.header("🔧 System Status")
+        
+        # Database connection status
         if status["redshift_configured"]:
             st.success("✅ Redshift configured")
+            if status["redshift_accessible"]:
+                st.success("✅ Database connected - Using REAL DATA")
+            else:
+                st.warning("⚠️ Database not accessible - Check VPN connection")
+                st.info("💡 Connect to VPN to access real data")
         else:
             st.error("❌ Redshift not configured")
+            st.info("💡 Set up database credentials to access real data")
             
         if status["openai_configured"]:
             st.success("✅ OpenAI configured")
         else:
             st.error("❌ OpenAI not configured")
+        
+        # Connection test button
+        if st.button("🔄 Test Database Connection"):
+            with st.spinner("Testing connection..."):
+                conn = get_redshift_connection()
+                if conn:
+                    st.success("✅ Database connection successful!")
+                    conn.close()
+                else:
+                    st.error("❌ Database connection failed")
+                    st.info("💡 Make sure you're connected to VPN")
+    
+
+    # Real Data Access Help
+    if not status["redshift_accessible"]:
+        st.subheader("🔒 Real Data Access Required")
+        
+        with st.expander("📋 **Setup Instructions**", expanded=True):
+            st.markdown("""
+            **To access real data, you need to:**
             
-        if status["redshift_accessible"]:
-            st.success("✅ Database connected")
-        else:
-            st.warning("⚠️ Database not accessible")
+            1. **🔐 Connect to VPN**: Ensure you're connected to your company VPN
+            2. **🔧 Set Environment Variables**: Configure database credentials
+            3. **🚀 Run Locally**: Use the production startup script
+            
+            **Quick Setup:**
+            ```bash
+            # Set your database credentials
+            export REDSHIFT_HOST="dataeng-prod.cqyxh8rl6vlx.us-west-2.redshift.amazonaws.com"
+            export REDSHIFT_DATABASE="your_database"
+            export REDSHIFT_USERNAME="your_username"
+            export REDSHIFT_PASSWORD="your_password"
+            export REDSHIFT_PORT="5439"
+            export OPENAI_API_KEY="your_api_key"
+            
+            # Start the app
+            ./start_production.sh
+            ```
+            """)
+        
+        with st.expander("🔧 **Troubleshooting**", expanded=False):
+            st.markdown("""
+            **Common Issues:**
+            
+            - **VPN Not Connected**: Connect to your company VPN first
+            - **Wrong Credentials**: Check your database username/password
+            - **Network Issues**: Ensure you can reach the database host
+            - **Firewall**: Check if your firewall allows the connection
+            
+            **Test Connection:**
+            ```bash
+            # Test database connection
+            psql -h dataeng-prod.cqyxh8rl6vlx.us-west-2.redshift.amazonaws.com -p 5439 -U your_username -d your_database
+            ```
+            """)
+        
+        st.warning("⚠️ **Demo mode is disabled** - This app requires real database access to be useful")
+    else:
+        st.success("🎉 **Real Data Access Active** - You're connected to the live database!")
     
     # Available Tables Section
     with st.expander("📊 Available Tables & Schemas", expanded=False):
