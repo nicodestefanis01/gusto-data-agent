@@ -1,3 +1,57 @@
+
+# Production mode configuration
+import os
+import sys
+from pathlib import Path
+
+# Production mode configuration
+import os
+import sys
+from pathlib import Path
+
+# Production mode detection
+PRODUCTION_MODE = os.getenv('PRODUCTION_MODE', 'false').lower() == 'true'
+STREAMLIT_CLOUD = os.getenv('STREAMLIT_CLOUD', 'false').lower() == 'true'
+
+# Production settings
+if PRODUCTION_MODE or STREAMLIT_CLOUD:
+    # Disable debug features in production
+    st.set_page_config(
+        page_title="Gusto Data Agent",
+        page_icon="📊",
+        layout="wide",
+        initial_sidebar_state="expanded"
+    )
+    
+    # Production logging
+    import logging
+    logging.basicConfig(level=logging.WARNING)
+    
+    # Production performance settings
+    st.cache_data.clear()
+
+
+# Production mode detection
+PRODUCTION_MODE = os.getenv('PRODUCTION_MODE', 'false').lower() == 'true'
+STREAMLIT_CLOUD = os.getenv('STREAMLIT_CLOUD', 'false').lower() == 'true'
+
+# Production settings
+if PRODUCTION_MODE or STREAMLIT_CLOUD:
+    # Disable debug features in production
+    st.set_page_config(
+        page_title="Gusto Data Agent",
+        page_icon="📊",
+        layout="wide",
+        initial_sidebar_state="expanded"
+    )
+    
+    # Production logging
+    import logging
+    logging.basicConfig(level=logging.WARNING)
+    
+    # Production performance settings
+    st.cache_data.clear()
+
 #!/usr/bin/env python3
 """
 Gusto Data Agent - AI-Powered Data Analysis
@@ -293,6 +347,38 @@ def create_visualization(df: pd.DataFrame, query: str):
         return fig
     
     return None
+
+
+# Production error handling
+def handle_production_errors(func):
+    """Decorator for production error handling"""
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            if PRODUCTION_MODE or STREAMLIT_CLOUD:
+                st.error(f"An error occurred: {str(e)}")
+                st.info("💡 Try refreshing the page or contact support")
+                return None
+            else:
+                raise e
+    return wrapper
+
+
+# Production error handling
+def handle_production_errors(func):
+    """Decorator for production error handling"""
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            if PRODUCTION_MODE or STREAMLIT_CLOUD:
+                st.error(f"An error occurred: {str(e)}")
+                st.info("💡 Try refreshing the page or contact support")
+                return None
+            else:
+                raise e
+    return wrapper
 
 def main():
     """Main application"""
