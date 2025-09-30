@@ -38,6 +38,136 @@ except Exception as e:
 
 
 
+
+
+# Loading Optimizations
+import streamlit as st
+import time
+
+# Add loading states and progress bars
+def show_loading_state(message="Loading..."):
+    """Show loading state with progress"""
+    with st.spinner(message):
+        time.sleep(0.1)  # Small delay to show loading
+    return True
+
+# Optimize imports with lazy loading
+def lazy_import_plotly():
+    """Lazy load plotly only when needed"""
+    try:
+        import plotly.express as px
+        import plotly.graph_objects as go
+        return px, go
+    except ImportError:
+        return None, None
+
+# Optimize database queries
+def execute_query_fast(query, limit=100):
+    """Execute query with optimizations"""
+    try:
+        conn = get_optimized_redshift_connection()
+        if conn:
+            # Add LIMIT to prevent large result sets
+            if 'LIMIT' not in query.upper():
+                query += f" LIMIT {limit}"
+            
+            cursor = conn.cursor()
+            cursor.execute(query)
+            results = cursor.fetchall()
+            cursor.close()
+            conn.close()
+            return results
+    except Exception as e:
+        st.error(f"Query error: {e}")
+    return []
+
+# Add progress tracking
+def track_progress(step, total, message):
+    """Track progress for long operations"""
+    progress = step / total
+    st.progress(progress)
+    st.write(f"Step {step}/{total}: {message}")
+
+# Performance Optimizations
+import streamlit as st
+from functools import lru_cache
+import time
+
+# Cache expensive operations
+@lru_cache(maxsize=128)
+def get_cached_table_schemas():
+    """Cache table schemas to avoid repeated processing"""
+    return TABLE_SCHEMAS
+
+@lru_cache(maxsize=64)
+def get_cached_system_status():
+    """Cache system status for faster loading"""
+    return check_system_status()
+
+# Optimize database connections with connection pooling
+import psycopg2.pool
+
+# Create connection pool
+DB_POOL = None
+
+def get_db_pool():
+    """Get or create database connection pool"""
+    global DB_POOL
+    if DB_POOL is None:
+        try:
+            DB_POOL = psycopg2.pool.SimpleConnectionPool(
+                minconn=1,
+                maxconn=5,
+                host=os.getenv('REDSHIFT_HOST'),
+                database=os.getenv('REDSHIFT_DATABASE'),
+                user=os.getenv('REDSHIFT_USERNAME'),
+                password=os.getenv('REDSHIFT_PASSWORD'),
+                port=os.getenv('REDSHIFT_PORT', '5439')
+            )
+        except:
+            DB_POOL = None
+    return DB_POOL
+
+def get_optimized_redshift_connection():
+    """Get connection from pool for better performance"""
+    pool = get_db_pool()
+    if pool:
+        try:
+            return pool.getconn()
+        except:
+            return None
+    return get_redshift_connection()
+
+# Optimize system status checking
+def check_system_status_fast():
+    """Fast system status check with caching"""
+    # Use cached status if available
+    if hasattr(st.session_state, 'system_status_cache'):
+        cache_time = st.session_state.get('system_status_cache_time', 0)
+        if time.time() - cache_time < 30:  # Cache for 30 seconds
+            return st.session_state.system_status_cache
+    
+    # Get fresh status
+    
+    # Show loading state
+    with st.spinner("🚀 Loading Gusto Data Agent..."):
+        time.sleep(0.1)
+    
+    # Fast system status check
+    status = check_system_status_fast()
+    
+    # Show progress for database operations
+    if status["redshift_configured"]:
+        with st.spinner("🔍 Checking database connection..."):
+            time.sleep(0.1)
+
+    
+    # Cache the result
+    st.session_state.system_status_cache = status
+    st.session_state.system_status_cache_time = time.time()
+    
+    return status
+
 # Table schemas for all Gusto warehouse tables
 TABLE_SCHEMAS = {'bi.companies': ['id', 'name', 'trade_name', 'accounting_firm_id', 'created_at', 'company_lead_id', 'initial_company_size', 'initial_employee_count', 'segment_by_initial_size', 'segment_by_initial_employee_count', 'initial_contractor_count', 'approval_status', 'number_active_employees', 'number_active_contractors', 'segment_by_current_employee_count', 'segment_by_current_size', 'joined_at', 'is_active', 'finished_onboarding_at', 'originally_finished_onboarding_at', 'last_finished_onboarding_at', 'suspension_at', 'is_soft_suspended', 'has_suspension_warning', 'suspension_leaving_for', 'suspension_created_at', 'active_wc_policy', 'has_zenefits_integration', 'filing_address_id', 'filing_state', 'filing_city', 'filing_zip', 'mailing_address_id', 'tax_payer_type', 'pass_through', 'median_payroll_net_pay', 'median_payroll_tax', 'sic_code', 'previous_payroll_provider', 'had_previous_provider', 'has_accountant_collaborator', 'is_bank_verified', 'has_bank_info', 'from_partner_program', 'partner_acquisition', 'volume_discount_eligible', 'current_federal_deposit_schedule', 'is_eftps_enabled', 'partner_billing', 'bill_to_accountant', 'bill_to_client', 'bank_account_type', 'first_approved_at', 'is_eligible_for_fast_ach', 'has_fast_ach', 'supports_multiple_pay_schedules', 'has_teams', 'suggested_referral', 'suggested_referral_at', 'suggested_referral_by_user', 'estimated_company_founded_date', 'previous_payroll_provider_type', 'current_flag', 'updated_at', 'industry_source', 'slug', 'previous_payroll_provider_sub_type', 'previous_company_id', 'is_big_desk', 'lead_industry_classification', 'is_big_desk_initial', 'number_active_contractors_current_mtd', 'number_active_employees_current_mtd', 'uuid', 'has_gws', 'is_mrb', 'previous_provider_in', 'suspension_id', 'dbt_incremental_ts', 'sales_program', 'risk_state_description', 'suspended_reason', 'naics_code', 'user_provided_industry', 'user_provided_sub_industry', 'industry_classification', 'industry_title', 'industry_custom_description', 'suggested_referral_channel', 'bank_name', 'snowplow__created_by_user_id', 'etl_insert_ts', 'etl_update_ts'], 'bi.credit_delinquencies': ['company_id', 'name', 'payment_id', 'payment_type', 'payment_speed_in_days', 'expedite_reason', 'off_cycle_reason', 'processing_state', 'debit_date', 'debit_event', 'debit_amount_attempted', 'error_code', 'error_code_returned_at', 'past_due_date', 'admin_comment', 'admin_end_date', 'successful_credits', 'final_credit_reversal_date', 'successful_debits', 'final_debit_date', 'recovery_debits', 'final_recovery_debit_date', 'wire_recovery_amount', 'loi_recovered_amount', 'wire_recovery_date', 'is_credit_loss', 'recovery_needed_flag', 'recovery_amount_needed', 'in_flight', 'recovered_amount', 'pending_amount', 'delinquent_status', 'final_date', 'days_past_due', 'is_cancelled', 'updated_at', 'etl_comments', 'dbt_incremental_ts'], 'bi.gusto_employees': ['dbt_id', 'id', 'sfdc_ee_id', 'first_name', 'last_name', 'name', 'nickname', 'email', 'hired_at', 'terminated_at', 'department_name', 'work_state', 'status', 'worker_type', 'worker_sub_type', 'org', 'job_title', 'location', 'team', 'sub_team', 'is_pe', 'pe', 'pe_email', 'sfdc_class_queue', 'sfdc_benefits_class', 'sfdc_profile_id', 'sfdc_userrole_id', 'sfdc_userrole_name', 'sfdc_user_id', 'genesys_user_id', 'cxone_agent_id', 'cxone_user_id', 'updated_date', 'lastmodified_ts', 'effect_start_dt', 'effect_end_dt', 'current_flag', 'mu_id', 'mu_name', 'pe_sfdc_ee_id', 'etl_insert_ts', 'etl_update_ts'], 'bi.information_requests': ['id', 'resource_id', 'resource_type', 'submission_state', 'situation', 'queue', 'company_id', 'requested_by_user_email', 'hide_from_review_queue', 'created_at', 'current_flag', 'updated_at', 'dbt_incremental_ts', 'etl_insert_ts', 'etl_update_ts'], 'bi.penalty_cases': ['id', 'agent_id', 'agency_name', 'created_at', 'year', 'quarter', 'title', 'total_interest_amount', 'error_type', 'total_penalty_amount', 'total_penalty_paid', 'total_interest_paid', 'error_origin', 'status', 'updated_at', 'penalty_group_id', 'agent_payment', 'dbt_incremental_ts', 'etl_insert_ts', 'etl_update_ts'], 'bi.penalty_groups': ['id', 'penalty_case_id', 'link', 'ticket_system_of_record', 'sor_ticket_id', 'pay_to', 'batch', 'approval_status', 'created_at', 'updated_at', 'source_ts_tstamp', 'dbt_incremental_ts', 'etl_insert_ts', 'etl_update_ts'], 'bi_reporting.gusto_payments_and_losses': ['calendar_date', 'week_in_month', 'event_type', 'company_id', 'event_id', 'event_debit_date', 'bank_name', 'origination_account_id', 'company_age', 'sales_program', 'user_provided_industry', 'product_plan', 'initial_size', 'current_size', 'is_mrb', 'managing_accounting_firm_id', 'partner_level_tier', 'is_gep_company', 'gep_partner_name', 'invoice_total_debit', 'mrr_payroll_pre_discounts', 'mrr_payroll_post_discounts', 'initiated_by', 'error_code', 'error_code_returned_at', 'event_speed_in_days', 'ach_speed', 'is_auto_pilot', 'plaid_connected_flag', 'funding_type', 'funding_method', 'event_id_risk', 'transmission_flag', 'processing_state', 'original_status', 'last_status', 'challenged_reasons', 'unchallenged_reasons', 'plaid_challenge_flag', 'pocm_challenge_flag', 'only_pocm_challenge_flag', 'pfqm_challenge_flag', 'reviewed_by_risk_model_flag', 'event_gross_amount', 'ato_flag', 'credit_loss_flag', 'days_past_due', 'recovery_date', 'expected_debit_amount', 'ne_successful_debit_amount', 'ep_successful_debit_amount', 'final_successful_debit_amount', 'failed_debits_count', 'failed_payment_flag', 'failed_payment_amount', 'failed_unrecovered_payment_amount', 'failed_payment_outstanding_amount', 'recovered_amount', 'net_loss_amount', 'etl_insert_ts'], 'bi.nacha_entries': ['id', 'created_at_date', 'batch_check_date', 'amount', 'company_id', 'employee_id', 'contractor_id', 'payroll_id', 'contractor_payment_id', 'agent_payment_id', 'error_code', 'is_debit', 'is_credit', 'entry_code', 'transaction_type', 'is_test_deposit', 'is_invoice', 'current_flag', 'updated_at', 'entry_id', 'international_contractor_id', 'international_contractor_payment_id', 'returned_code_at', 'international_employee_payroll_id', 'nacha_batch_id', 'bank_account_type', 'notify_if_error', 'resubmit_if_error', 'company_transaction', 'bank_account_id', 'dismissed', 'refund', 'accounting_firm_id', 'failed_entry_id', 'cleared', 'requested_by_id', 'payment_direction', 'origination_account_id', 'effective_entry_date', 'uuid', 'submission_date', 'dbt_incremental_ts', 'encrypted_bank_routing_number', 'processing_state', 'confirmation', 'ach_trace_id', 'ach_type', 'bank_account_hapii_id', 'correction_code', 'etl_insert_ts', 'etl_update_ts']}
 
@@ -136,6 +266,12 @@ def get_redshift_connection():
     except Exception as e:
         return None
 
+
+# Initialize session state for caching
+if 'system_status_cache' not in st.session_state:
+    st.session_state.system_status_cache = None
+if 'system_status_cache_time' not in st.session_state:
+    st.session_state.system_status_cache_time = 0
 def main():
     # Check VPN access first
     check_vpn_access()
@@ -150,7 +286,19 @@ def main():
     st.info("🔒 **Secure Access**: VPN connection verified - Full database access enabled")
     
     # Check system status
-    status = check_system_status()
+    
+    # Show loading state
+    with st.spinner("🚀 Loading Gusto Data Agent..."):
+        time.sleep(0.1)
+    
+    # Fast system status check
+    status = check_system_status_fast()
+    
+    # Show progress for database operations
+    if status["redshift_configured"]:
+        with st.spinner("🔍 Checking database connection..."):
+            time.sleep(0.1)
+
     
     # Display status banner
     if status["redshift_accessible"] and status["openai_available"]:
