@@ -14,7 +14,7 @@ import json
 import ipaddress
 import socket
 import time
-import openai
+from openai import OpenAI
 import plotly.express as px
 import plotly.graph_objects as go
 
@@ -213,7 +213,9 @@ def get_redshift_connection():
 def generate_sql_with_openai(query: str) -> Dict[str, Any]:
     """Generate SQL using OpenAI API"""
     try:
-        openai.api_key = os.getenv('OPENAI_API_KEY')
+        from openai import OpenAI
+        
+        client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
         
         # Create schema context
         schema_context = "\n".join([
@@ -239,7 +241,7 @@ def generate_sql_with_openai(query: str) -> Dict[str, Any]:
         Return only the SQL query, no explanations.
         """
         
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}],
             max_tokens=500,
