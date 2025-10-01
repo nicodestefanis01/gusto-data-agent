@@ -59,6 +59,83 @@ A Streamlit application for querying Gusto data warehouse with natural language.
 """
 
 import streamlit as st
+def generate_sql_insights(sql_query: str, query_text: str, result_df=None) -> str:
+    """Generate AI-powered insights from SQL query and results"""
+    try:
+        from openai import OpenAI
+        client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+        
+        # Prepare context for insights
+        context = f"""
+        SQL Query: {sql_query}
+        Original Question: {query_text}
+        """
+        
+        if result_df is not None and not result_df.empty:
+            # Add result summary
+            context += f"""
+            Query Results Summary:
+            - Number of rows: {len(result_df)}
+            - Columns: {list(result_df.columns)}
+            - Sample data: {result_df.head(3).to_dict()}
+            """
+        
+        # Generate insights
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=[
+                {
+                    "role": "system", 
+                    "content": """You are a data analyst expert. Analyze the SQL query and provide:
+                    1. What this query is asking for
+                    2. Key business insights from the data
+                    3. Potential trends or patterns
+                    4. Recommendations for further analysis
+                    5. Any data quality considerations
+                    
+                    Be concise but insightful. Focus on business value."""
+                },
+                {
+                    "role": "user",
+                    "content": f"Analyze this query and provide insights: {context}"
+                }
+            ],
+            max_tokens=500,
+            temperature=0.3
+        )
+        
+        return response.choices[0].message.content.strip()
+        
+    except Exception as e:
+        return f"❌ Could not generate insights: {str(e)}"
+
+def generate_sql_explanation(sql_query: str) -> str:
+    """Generate a plain English explanation of the SQL query"""
+    try:
+        from openai import OpenAI
+        client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+        
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are a SQL expert. Explain SQL queries in simple, business-friendly language. Focus on what the query does, not technical details."
+                },
+                {
+                    "role": "user", 
+                    "content": f"Explain this SQL query in simple terms: {sql_query}"
+                }
+            ],
+            max_tokens=200,
+            temperature=0.3
+        )
+        
+        return response.choices[0].message.content.strip()
+        
+    except Exception as e:
+        return f"❌ Could not explain query: {str(e)}"
+
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
