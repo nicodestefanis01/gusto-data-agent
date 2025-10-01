@@ -462,16 +462,144 @@ def main():
     # Check VPN access
     check_vpn_access()
     
-    # Page config
+    # Page config with modern styling
     st.set_page_config(
-        page_title="Gusto Data Agent",
-        page_icon="📊",
-        layout="wide"
+        page_title="GADA - Gusto AI Data Analyst",
+        page_icon="🤖",
+        layout="wide",
+        initial_sidebar_state="collapsed"
     )
     
-    # Header
-    st.title("📊 Gusto Data Agent")
-    st.markdown("AI-powered data analysis for Gusto's data warehouse")
+    # Custom CSS for ChatGPT-like design
+    st.markdown("""
+    <style>
+    /* Main container styling */
+    .main .block-container {
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+        max-width: 1200px;
+    }
+    
+    /* Header styling */
+    .header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 2rem;
+        border-radius: 15px;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+    
+    .header h1 {
+        color: white;
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin: 0;
+        text-align: center;
+    }
+    
+    .header p {
+        color: rgba(255,255,255,0.9);
+        font-size: 1.2rem;
+        text-align: center;
+        margin: 0.5rem 0 0 0;
+    }
+    
+    /* Chat-like interface */
+    .chat-container {
+        background: #f8f9fa;
+        border-radius: 15px;
+        padding: 2rem;
+        margin: 1rem 0;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+    }
+    
+    .query-input {
+        background: white;
+        border: 2px solid #e9ecef;
+        border-radius: 25px;
+        padding: 1rem 1.5rem;
+        font-size: 1.1rem;
+        width: 100%;
+        transition: all 0.3s ease;
+    }
+    
+    .query-input:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        outline: none;
+    }
+    
+    /* Button styling */
+    .stButton > button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 25px;
+        padding: 0.75rem 2rem;
+        font-size: 1.1rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+    }
+    
+    .stButton > button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    }
+    
+    /* Card styling */
+    .card {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin: 1rem 0;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        border: 1px solid #e9ecef;
+    }
+    
+    /* Status indicators */
+    .status-success {
+        background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 600;
+    }
+    
+    .status-warning {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 600;
+    }
+    
+    /* Sidebar styling */
+    .sidebar .sidebar-content {
+        background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin: 1rem;
+    }
+    
+    .sidebar h1, .sidebar h2, .sidebar h3 {
+        color: white;
+    }
+    
+    /* Hide default Streamlit elements */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    </style>
+    """, unsafe_allow_html=True)
+    
+    # Modern header
+    st.markdown("""
+    <div class="header">
+        <h1>🤖 GADA</h1>
+        <p>Gusto AI Data Analyst - Your intelligent data companion</p>
+    </div>
+    """, unsafe_allow_html=True)
     
     # Check system status
     status = check_system_status()
@@ -642,5 +770,15 @@ def main():
     else:
         st.info("🎮 **Demo mode with realistic sample data**")
 
+
+    # Modern footer
+    st.markdown("---")
+    st.markdown("""
+    <div style="text-align: center; padding: 2rem; color: #666;">
+        <p style="font-size: 1.1rem; margin: 0;"><strong>🤖 GADA</strong> - Gusto AI Data Analyst</p>
+        <p style="font-size: 0.9rem; margin: 0.5rem 0 0 0;">Powered by AI • Built for Gusto</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
 if __name__ == "__main__":
     main()
