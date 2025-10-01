@@ -59,6 +59,49 @@ A Streamlit application for querying Gusto data warehouse with natural language.
 """
 
 import streamlit as st
+def generate_query_summary(result_df, query_text, sql_query) -> str:
+    """Generate a concise AI summary of query results"""
+    try:
+        from openai import OpenAI
+        client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+        
+        # Prepare summary context
+        summary_context = f"""
+        Query: {query_text}
+        SQL: {sql_query}
+        Results: {len(result_df)} rows, {len(result_df.columns)} columns
+        Columns: {list(result_df.columns)}
+        Sample data: {result_df.head(3).to_dict() if not result_df.empty else 'No data'}
+        """
+        
+        # Generate concise summary
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=[
+                {
+                    "role": "system", 
+                    "content": """You are a data analyst. Provide a concise, professional summary of query results. Include:
+                    1. What the data shows (key findings)
+                    2. Notable patterns or insights
+                    3. Data quality observations
+                    4. Business implications
+                    
+                    Keep it brief (2-3 sentences) and focus on the most important insights."""
+                },
+                {
+                    "role": "user",
+                    "content": f"Summarize these query results: {summary_context}"
+                }
+            ],
+            max_tokens=200,
+            temperature=0.3
+        )
+        
+        return response.choices[0].message.content.strip()
+        
+    except Exception as e:
+        return f"❌ Could not generate summary: {str(e)}"
+
 def generate_sql_insights(sql_query: str, query_text: str, result_df=None) -> str:
     """Generate AI-powered insights from SQL query and results"""
     try:
