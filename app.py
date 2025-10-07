@@ -17,7 +17,7 @@ STREAMLIT_CLOUD = os.getenv('STREAMLIT_CLOUD', 'false').lower() == 'true'
 if PRODUCTION_MODE or STREAMLIT_CLOUD:
     # Disable debug features in production
     st.set_page_config(
-        page_title="Gusto Data Agent",
+        page_title="GAIA - Gusto AI Analyst",
         page_icon="📊",
         layout="wide",
         initial_sidebar_state="expanded"
@@ -39,7 +39,7 @@ STREAMLIT_CLOUD = os.getenv('STREAMLIT_CLOUD', 'false').lower() == 'true'
 if PRODUCTION_MODE or STREAMLIT_CLOUD:
     # Disable debug features in production
     st.set_page_config(
-        page_title="Gusto Data Agent",
+        page_title="GAIA - Gusto AI Analyst",
         page_icon="📊",
         layout="wide",
         initial_sidebar_state="expanded"
@@ -54,7 +54,7 @@ if PRODUCTION_MODE or STREAMLIT_CLOUD:
 
 #!/usr/bin/env python3
 """
-Gusto Data Agent - AI-Powered Data Analysis
+GAIA - Gusto AI Analyst
 A Streamlit application for querying Gusto data warehouse with natural language.
 """
 
@@ -507,7 +507,7 @@ def main():
     
     # Page config with modern styling
     st.set_page_config(
-        page_title="GADA - Gusto AI Data Analyst",
+        page_title="GAIA - Gusto AI Analyst",
         page_icon="🤖",
         layout="wide",
         initial_sidebar_state="collapsed"
@@ -639,8 +639,8 @@ def main():
     # Modern header
     st.markdown("""
     <div class="header">
-        <h1>🤖 GADA</h1>
-        <p>Gusto AI Data Analyst - Your intelligent data companion</p>
+        <h1>🤖 GAIA</h1>
+        <p>Gusto AI Analyst - Your intelligent data companion</p>
     </div>
     """, unsafe_allow_html=True)
     
@@ -818,7 +818,7 @@ def main():
     st.markdown("---")
     st.markdown("""
     <div style="text-align: center; padding: 2rem; color: #666;">
-        <p style="font-size: 1.1rem; margin: 0;"><strong>🤖 GADA</strong> - Gusto AI Data Analyst</p>
+        <p style="font-size: 1.1rem; margin: 0;"><strong>🤖 GAIA</strong> - Gusto AI Analyst</p>
         <p style="font-size: 0.9rem; margin: 0.5rem 0 0 0;">Powered by AI • Built for Gusto</p>
     </div>
     """, unsafe_allow_html=True)

@@ -1,4 +1,4 @@
-# Gusto Data Agent - Production Version
+# GAIA - Gusto AI Analyst (Production Version)
 
 🚀 **AI-powered SQL generation for Gusto data warehouse with real database connectivity**
 
