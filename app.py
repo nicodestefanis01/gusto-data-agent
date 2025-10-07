@@ -322,6 +322,9 @@ def generate_sql_with_ai(query: str) -> str:
         9. IMPORTANT: For filtering loss transactions:
            - Fraud loss transactions: use credit_loss_flag = false (or is_credit_loss = false for bi.credit_delinquencies)
            - Credit loss transactions: use credit_loss_flag = true (or is_credit_loss = true for bi.credit_delinquencies)
+        10. IMPORTANT: For bi.companies table:
+            - filing_state is ALWAYS a 2-letter state abbreviation (e.g., 'CA', 'NY', 'TX')
+            - When filtering by state, use uppercase abbreviations like WHERE filing_state = 'CA'
         
         Generate SQL:
         """

@@ -157,6 +157,22 @@ WHERE credit_loss_flag = true
 LIMIT 100;
 ```
 
+### State Data Format (bi.companies)
+The `filing_state` column in `bi.companies` always contains 2-letter state abbreviations (e.g., 'CA', 'NY', 'TX').
+
+Example:
+```sql
+-- Get companies in California
+SELECT * FROM bi.companies 
+WHERE filing_state = 'CA' 
+LIMIT 100;
+
+-- Get companies in New York or Texas
+SELECT * FROM bi.companies
+WHERE filing_state IN ('NY', 'TX')
+LIMIT 100;
+```
+
 ## 🛠️ Development
 
 ### Project Structure
