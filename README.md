@@ -132,6 +132,29 @@ Try these natural language queries:
 "Find companies in California with high risk scores"
 "Show recent payment activity by company"
 "List penalty cases from the last quarter"
+"Show fraud loss transactions from last month"
+"Show credit loss transactions with amounts over $1000"
+```
+
+## 📋 Important Data Rules
+
+### Loss Transaction Types
+When querying loss transactions in `bi_reporting.gusto_payments_and_losses` or `bi.credit_delinquencies`:
+
+- **Fraud Loss Transactions**: Use `credit_loss_flag = false` (or `is_credit_loss = false` for credit_delinquencies table)
+- **Credit Loss Transactions**: Use `credit_loss_flag = true` (or `is_credit_loss = true` for credit_delinquencies table)
+
+Example:
+```sql
+-- Get fraud losses
+SELECT * FROM bi_reporting.gusto_payments_and_losses 
+WHERE credit_loss_flag = false 
+LIMIT 100;
+
+-- Get credit losses  
+SELECT * FROM bi_reporting.gusto_payments_and_losses
+WHERE credit_loss_flag = true
+LIMIT 100;
 ```
 
 ## 🛠️ Development

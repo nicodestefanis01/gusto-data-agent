@@ -319,6 +319,9 @@ def generate_sql_with_ai(query: str) -> str:
         6. For time-based aggregations, ALWAYS add ORDER BY time_column DESC to show most recent first
         7. For monthly/weekly/daily aggregations, sort by the time period in descending order
         8. IMPORTANT: For bi_reporting.gusto_payments_and_losses table, ALWAYS use event_debit_date as the date column for time-based queries
+        9. IMPORTANT: For filtering loss transactions:
+           - Fraud loss transactions: use credit_loss_flag = false (or is_credit_loss = false for bi.credit_delinquencies)
+           - Credit loss transactions: use credit_loss_flag = true (or is_credit_loss = true for bi.credit_delinquencies)
         
         Generate SQL:
         """
