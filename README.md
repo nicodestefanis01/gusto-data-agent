@@ -136,6 +136,8 @@ Try these natural language queries:
 "Show credit loss transactions with amounts over $1000"
 "Show me ATO transactions from the last quarter"
 "Find ATO-related payments with losses greater than $500"
+"Show total payments for fiscal year 2024"
+"What were the losses in the current fiscal year?"
 ```
 
 ## 📋 Important Data Rules
@@ -194,6 +196,28 @@ LIMIT 100;
 SELECT * FROM bi_reporting.gusto_payments_and_losses
 WHERE ato_flag = true 
   AND net_loss_amount > 0
+LIMIT 100;
+```
+
+### Fiscal Year at Gusto
+Gusto's fiscal year starts in **May** (May 1st).
+
+- **FY2024** = May 2023 through April 2024
+- **FY2025** = May 2024 through April 2025
+- **Current FY** = May of previous calendar year through April of current calendar year
+
+Example:
+```sql
+-- Get payments for FY2024 (May 2023 - April 2024)
+SELECT * FROM bi_reporting.gusto_payments_and_losses 
+WHERE event_debit_date >= '2023-05-01' 
+  AND event_debit_date < '2024-05-01'
+LIMIT 100;
+
+-- Get current fiscal year data (if today is in 2024)
+SELECT * FROM bi_reporting.gusto_payments_and_losses
+WHERE event_debit_date >= '2023-05-01'
+  AND event_debit_date < '2024-05-01'
 LIMIT 100;
 ```
 

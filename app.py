@@ -329,6 +329,10 @@ def generate_sql_with_ai(query: str) -> str:
             - ALWAYS use ato_flag column to filter ATO-related transactions
             - ATO transactions: WHERE ato_flag = true
             - Non-ATO transactions: WHERE ato_flag = false
+        12. IMPORTANT: Fiscal Year at Gusto:
+            - Gusto's fiscal year starts in May (FY starts May 1st)
+            - When asked about fiscal year periods, calculate accordingly (e.g., FY2024 = May 2023 - April 2024)
+            - For "current fiscal year", use May of previous calendar year through April of current calendar year
         
         Generate SQL:
         """
