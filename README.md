@@ -134,6 +134,8 @@ Try these natural language queries:
 "List penalty cases from the last quarter"
 "Show fraud loss transactions from last month"
 "Show credit loss transactions with amounts over $1000"
+"Show me ATO transactions from the last quarter"
+"Find ATO-related payments with losses greater than $500"
 ```
 
 ## 📋 Important Data Rules
@@ -170,6 +172,28 @@ LIMIT 100;
 -- Get companies in New York or Texas
 SELECT * FROM bi.companies
 WHERE filing_state IN ('NY', 'TX')
+LIMIT 100;
+```
+
+### ATO (Account Takeover) Transactions
+For all ATO-related payment information in `bi_reporting.gusto_payments_and_losses`, use the `ato_flag` column.
+
+Example:
+```sql
+-- Get ATO transactions
+SELECT * FROM bi_reporting.gusto_payments_and_losses 
+WHERE ato_flag = true 
+LIMIT 100;
+
+-- Get non-ATO transactions
+SELECT * FROM bi_reporting.gusto_payments_and_losses
+WHERE ato_flag = false
+LIMIT 100;
+
+-- Get ATO transactions with losses
+SELECT * FROM bi_reporting.gusto_payments_and_losses
+WHERE ato_flag = true 
+  AND net_loss_amount > 0
 LIMIT 100;
 ```
 
