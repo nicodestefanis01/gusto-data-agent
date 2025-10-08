@@ -707,10 +707,40 @@ def main():
         
         st.markdown("---")
         
+        # Chat management section
+        st.subheader("💬 Chat Management")
+        
+        # Show message count
+        num_messages = len(st.session_state.messages)
+        st.metric("Messages", num_messages)
+        
         # Clear chat button
-        if st.button("🗑️ Clear Chat History", use_container_width=True):
+        if st.button("🗑️ Clear Chat History", use_container_width=True, type="primary"):
             st.session_state.messages = []
+            st.session_state.feedback = {}
+            st.success("Chat cleared!")
             st.rerun()
+        
+        # Add separator button for multiple inquiries
+        if st.button("➕ New Inquiry (Add Separator)", use_container_width=True):
+            if len(st.session_state.messages) > 0:
+                st.session_state.messages.append({
+                    "role": "assistant",
+                    "content": "---\n### 🔄 New Inquiry Started\n---"
+                })
+                st.rerun()
+        
+        # Show feedback summary
+        if st.session_state.feedback:
+            st.markdown("---")
+            st.subheader("📊 Feedback Summary")
+            positive = sum(1 for v in st.session_state.feedback.values() if v == "positive")
+            negative = sum(1 for v in st.session_state.feedback.values() if v == "negative")
+            col_pos, col_neg = st.columns(2)
+            with col_pos:
+                st.metric("👍 Helpful", positive)
+            with col_neg:
+                st.metric("👎 Not Helpful", negative)
     
 
     # Real Data Access Help
@@ -785,12 +815,14 @@ def main():
                 else:
                     st.code(f"SELECT * FROM {table_name} LIMIT 5", language="sql")
     
-    # Initialize chat history in session state
+    # Initialize chat history and feedback in session state
     if "messages" not in st.session_state:
         st.session_state.messages = []
+    if "feedback" not in st.session_state:
+        st.session_state.feedback = {}
     
     # Display chat messages from history
-    for message in st.session_state.messages:
+    for idx, message in enumerate(st.session_state.messages):
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
             
@@ -806,6 +838,26 @@ def main():
                 # Display visualization if present
                 if "figure" in message:
                     st.plotly_chart(message["figure"], use_container_width=True)
+            
+            # Add feedback buttons for assistant messages
+            if message["role"] == "assistant" and "dataframe" in message:
+                feedback_key = f"feedback_{idx}"
+                col1, col2, col3 = st.columns([1, 1, 8])
+                
+                with col1:
+                    if st.button("👍", key=f"thumbs_up_{idx}", help="Helpful response"):
+                        st.session_state.feedback[feedback_key] = "positive"
+                        st.toast("✅ Thank you for your feedback!", icon="👍")
+                
+                with col2:
+                    if st.button("👎", key=f"thumbs_down_{idx}", help="Not helpful"):
+                        st.session_state.feedback[feedback_key] = "negative"
+                        st.toast("📝 Thank you for your feedback. We'll improve!", icon="👎")
+                
+                # Show feedback status if already provided
+                if feedback_key in st.session_state.feedback:
+                    feedback_icon = "👍" if st.session_state.feedback[feedback_key] == "positive" else "👎"
+                    st.caption(f"Feedback recorded: {feedback_icon}")
     
     # Chat input
     if prompt := st.chat_input("Ask me anything about Gusto data..."):
