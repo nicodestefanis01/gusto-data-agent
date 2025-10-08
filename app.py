@@ -703,6 +703,13 @@ def main():
                 else:
                     st.error("❌ Database connection failed")
                     st.info("💡 Make sure you're connected to VPN")
+        
+        st.markdown("---")
+        
+        # Clear chat button
+        if st.button("🗑️ Clear Chat History", use_container_width=True):
+            st.session_state.messages = []
+            st.rerun()
     
 
     # Real Data Access Help
@@ -777,48 +784,114 @@ def main():
                 else:
                     st.code(f"SELECT * FROM {table_name} LIMIT 5", language="sql")
     
-    # Main interface
-    st.header("💬 Ask a Question")
+    # Initialize chat history in session state
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
     
-    # Example queries
-    examples = [
-        "Show me all companies created this month",
-        "What are the top 10 companies by employee count?",
-        "Show monthly volumes of new companies",
-        "Find all open information requests",
-        "What's the breakdown of employees by department?"
-    ]
-    
-    col1, col2 = st.columns([3, 1])
-    with col1:
-        query = st.text_input("Enter your question:", placeholder="Ask anything about Gusto data...")
-    with col2:
-        if st.button("🚀 Analyze", type="primary"):
-            pass
-    
-    # Process query
-    if query:
-        with st.spinner("🤖 Generating SQL..."):
-            sql = generate_sql_with_ai(query)
+    # Display chat messages from history
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
             
-        if sql:
-            st.subheader("🔍 Generated SQL")
-            st.code(sql, language="sql")
+            # Display SQL if present
+            if "sql" in message:
+                with st.expander("🔍 View SQL Query"):
+                    st.code(message["sql"], language="sql")
             
-            with st.spinner("📊 Executing query..."):
-                df, error = execute_sql(sql)
+            # Display results if present
+            if "dataframe" in message:
+                st.dataframe(message["dataframe"])
                 
-            if error:
-                st.error(f"❌ Query failed: {error}")
-            elif df is not None:
-                st.subheader("📈 Results")
-                st.dataframe(df)
+                # Display visualization if present
+                if "figure" in message:
+                    st.plotly_chart(message["figure"], use_container_width=True)
+    
+    # Chat input
+    if prompt := st.chat_input("Ask me anything about Gusto data..."):
+        # Add user message to chat history
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        
+        # Display user message
+        with st.chat_message("user"):
+            st.markdown(prompt)
+        
+        # Generate and display assistant response
+        with st.chat_message("assistant"):
+            with st.spinner("🤖 Generating SQL..."):
+                sql = generate_sql_with_ai(prompt)
+            
+            if sql:
+                # Show SQL in expander
+                with st.expander("🔍 View SQL Query", expanded=False):
+                    st.code(sql, language="sql")
                 
-                # Create visualization
-                fig = create_visualization(df, query)
-                if fig:
-                    st.subheader("📊 Visualization")
-                    st.plotly_chart(fig, use_container_width=True)
+                with st.spinner("📊 Executing query..."):
+                    df, error = execute_sql(sql)
+                
+                if error:
+                    error_msg = f"❌ Query failed: {error}"
+                    st.error(error_msg)
+                    # Add error to chat history
+                    st.session_state.messages.append({
+                        "role": "assistant",
+                        "content": error_msg,
+                        "sql": sql
+                    })
+                elif df is not None and not df.empty:
+                    # Success message
+                    result_msg = f"✅ Found {len(df)} results"
+                    st.markdown(result_msg)
+                    
+                    # Display dataframe
+                    st.dataframe(df)
+                    
+                    # Create visualization
+                    fig = create_visualization(df, prompt)
+                    if fig:
+                        st.plotly_chart(fig, use_container_width=True)
+                    
+                    # Add to chat history
+                    message_data = {
+                        "role": "assistant",
+                        "content": result_msg,
+                        "sql": sql,
+                        "dataframe": df
+                    }
+                    if fig:
+                        message_data["figure"] = fig
+                    st.session_state.messages.append(message_data)
+                else:
+                    no_results_msg = "ℹ️ Query executed successfully but returned no results."
+                    st.info(no_results_msg)
+                    st.session_state.messages.append({
+                        "role": "assistant",
+                        "content": no_results_msg,
+                        "sql": sql
+                    })
+            else:
+                error_msg = "❌ Could not generate SQL query. Please try rephrasing your question."
+                st.error(error_msg)
+                st.session_state.messages.append({
+                    "role": "assistant",
+                    "content": error_msg
+                })
+    
+    # Add example prompts
+    if len(st.session_state.messages) == 0:
+        st.markdown("### 💡 Try asking:")
+        example_cols = st.columns(2)
+        examples = [
+            "Show me companies created this month",
+            "Top 10 companies by employee count",
+            "Companies with high risk tiers in California",
+            "ATO transactions from last quarter",
+            "Credit loss trends by month",
+            "Companies with fraud risk tier > 5"
+        ]
+        for idx, example in enumerate(examples):
+            with example_cols[idx % 2]:
+                if st.button(f"💬 {example}", key=f"example_{idx}", use_container_width=True):
+                    st.rerun()
     
     # Footer
     st.markdown("---")
