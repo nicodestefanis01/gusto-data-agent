@@ -248,6 +248,24 @@ FROM zenpayroll_production_no_pii.customer_risk_tiers
 WHERE company_id = 12345
 ORDER BY tier_date DESC
 LIMIT 10;
+
+-- Join with companies table
+SELECT 
+    c.name, 
+    c.filing_state,
+    crt.combined_risk_tier,
+    crt.fraud_risk_tier,
+    crt.tier_date
+FROM zenpayroll_production_no_pii.customer_risk_tiers crt
+JOIN bi.companies c ON crt.company_id = c.id
+WHERE crt.combined_risk_tier > 5
+ORDER BY crt.tier_date DESC
+LIMIT 100;
+```
+
+**Important Join Rule**: When joining `customer_risk_tiers` with `bi.companies`, always use:
+```sql
+customer_risk_tiers.company_id = companies.id
 ```
 
 ## 🛠️ Development

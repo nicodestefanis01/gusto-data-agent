@@ -338,6 +338,9 @@ def generate_sql_with_ai(query: str) -> str:
             - When asked about "risk tier" or "risk score", ALWAYS use combined_risk_tier column
             - Use table: zenpayroll_production_no_pii.customer_risk_tiers
             - For specific risk types, use fraud_risk_tier or credit_risk_tier
+        14. IMPORTANT: For joining customer_risk_tiers with companies:
+            - Join condition: customer_risk_tiers.company_id = companies.id
+            - Example: FROM zenpayroll_production_no_pii.customer_risk_tiers JOIN bi.companies ON customer_risk_tiers.company_id = companies.id
         
         Generate SQL:
         """
