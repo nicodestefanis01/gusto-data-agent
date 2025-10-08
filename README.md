@@ -234,12 +234,14 @@ LIMIT 100;
 ### Risk Tier Information
 For general risk tier queries, always use `combined_risk_tier` from the `zenpayroll_production_no_pii.customer_risk_tiers` table.
 
+**Important**: The `combined_risk_tier` column format is always **"Tier A"**, **"Tier B"**, **"Tier C"**, etc. (not just letters or numbers).
+
 Example:
 ```sql
--- Get companies with high risk tiers
+-- Get companies with specific risk tier
 SELECT company_id, combined_risk_tier, tier_date
 FROM zenpayroll_production_no_pii.customer_risk_tiers
-WHERE combined_risk_tier > 5
+WHERE combined_risk_tier = 'Tier A'
 LIMIT 100;
 
 -- Get specific risk types
@@ -258,7 +260,7 @@ SELECT
     crt.tier_date
 FROM zenpayroll_production_no_pii.customer_risk_tiers crt
 JOIN bi.companies c ON crt.company_id = c.id
-WHERE crt.combined_risk_tier > 5
+WHERE crt.combined_risk_tier IN ('Tier A', 'Tier B')
 ORDER BY crt.tier_date DESC
 LIMIT 100;
 ```
