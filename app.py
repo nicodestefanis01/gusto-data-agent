@@ -667,6 +667,12 @@ def main():
     </div>
     """, unsafe_allow_html=True)
     
+    # Initialize chat history and feedback in session state (MUST BE FIRST)
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+    if "feedback" not in st.session_state:
+        st.session_state.feedback = {}
+    
     # Check system status
     status = check_system_status()
     
@@ -814,12 +820,6 @@ def main():
                     st.code("SELECT * FROM bi.information_requests LIMIT 5", language="sql")
                 else:
                     st.code(f"SELECT * FROM {table_name} LIMIT 5", language="sql")
-    
-    # Initialize chat history and feedback in session state
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
-    if "feedback" not in st.session_state:
-        st.session_state.feedback = {}
     
     # Display chat messages from history
     for idx, message in enumerate(st.session_state.messages):
