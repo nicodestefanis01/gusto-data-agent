@@ -183,7 +183,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import os
-import psycopg2
+import snowflake.connector
 from datetime import datetime, timedelta
 import random
 from openai import OpenAI
@@ -264,31 +264,33 @@ def check_vpn_access():
 def check_system_status():
     """Check system status"""
     status = {
-        "redshift_configured": bool(os.getenv('REDSHIFT_HOST')),
+        "snowflake_configured": bool(os.getenv('SNOWFLAKE_ACCOUNT')),
         "openai_configured": bool(os.getenv('OPENAI_API_KEY')),
-        "redshift_accessible": False
+        "snowflake_accessible": False
     }
     
-    if status["redshift_configured"]:
+    if status["snowflake_configured"]:
         try:
-            conn = get_redshift_connection()
+            conn = get_snowflake_connection()
             if conn:
                 conn.close()
-                status["redshift_accessible"] = True
+                status["snowflake_accessible"] = True
         except:
             pass
     
     return status
 
-def get_redshift_connection():
-    """Get Redshift connection"""
+def get_snowflake_connection():
+    """Get Snowflake connection"""
     try:
-        return psycopg2.connect(
-            host=os.getenv('REDSHIFT_HOST'),
-            database=os.getenv('REDSHIFT_DATABASE'),
-            user=os.getenv('REDSHIFT_USERNAME'),
-            password=os.getenv('REDSHIFT_PASSWORD'),
-            port=os.getenv('REDSHIFT_PORT', '5439')
+        return snowflake.connector.connect(
+            account=os.getenv('SNOWFLAKE_ACCOUNT'),
+            user=os.getenv('SNOWFLAKE_USER'),
+            password=os.getenv('SNOWFLAKE_PASSWORD'),
+            database=os.getenv('SNOWFLAKE_DATABASE'),
+            schema=os.getenv('SNOWFLAKE_SCHEMA', 'PUBLIC'),
+            warehouse=os.getenv('SNOWFLAKE_WAREHOUSE'),
+            role=os.getenv('SNOWFLAKE_ROLE')
         )
     except Exception as e:
         st.error(f"Database connection failed: {e}")
@@ -314,7 +316,7 @@ def generate_sql_with_ai(query: str) -> str:
         1. Use ONLY the columns listed above
         2. Use proper table names with schema (e.g., bi.companies)
         3. Add LIMIT 100 to prevent large results
-        4. Use proper SQL syntax for Redshift
+        4. Use proper SQL syntax for Snowflake
         5. For time-based queries, use DATE_TRUNC for aggregations
         6. For time-based aggregations, ALWAYS add ORDER BY time_column DESC to show most recent first
         7. For monthly/weekly/daily aggregations, sort by the time period in descending order
@@ -361,7 +363,7 @@ def generate_sql_with_ai(query: str) -> str:
 def execute_sql(sql: str):
     """Execute SQL and return results"""
     try:
-        conn = get_redshift_connection()
+        conn = get_snowflake_connection()
         if not conn:
             return None, "Database connection failed"
         
@@ -669,15 +671,15 @@ def main():
         st.header("🔧 System Status")
         
         # Database connection status
-        if status["redshift_configured"]:
-            st.success("✅ Redshift configured")
-            if status["redshift_accessible"]:
+        if status["snowflake_configured"]:
+            st.success("✅ Snowflake configured")
+            if status["snowflake_accessible"]:
                 st.success("✅ Database connected - Using REAL DATA")
             else:
-                st.warning("⚠️ Database not accessible - Check VPN connection")
-                st.info("💡 Connect to VPN to access real data")
+                st.warning("⚠️ Database not accessible - Check connection")
+                st.info("💡 Verify Snowflake credentials and network access")
         else:
-            st.error("❌ Redshift not configured")
+            st.error("❌ Snowflake not configured")
             st.info("💡 Set up database credentials to access real data")
             
         if status["openai_configured"]:
@@ -688,7 +690,7 @@ def main():
         # Connection test button
         if st.button("🔄 Test Database Connection"):
             with st.spinner("Testing connection..."):
-                conn = get_redshift_connection()
+                conn = get_snowflake_connection()
                 if conn:
                     st.success("✅ Database connection successful!")
                     conn.close()
@@ -698,25 +700,26 @@ def main():
     
 
     # Real Data Access Help
-    if not status["redshift_accessible"]:
+    if not status["snowflake_accessible"]:
         st.subheader("🔒 Real Data Access Required")
         
         with st.expander("📋 **Setup Instructions**", expanded=True):
             st.markdown("""
             **To access real data, you need to:**
             
-            1. **🔐 Connect to VPN**: Ensure you're connected to your company VPN
-            2. **🔧 Set Environment Variables**: Configure database credentials
-            3. **🚀 Run Locally**: Use the production startup script
+            1. **🔧 Set Environment Variables**: Configure Snowflake credentials
+            2. **🚀 Run Locally**: Use the production startup script
             
             **Quick Setup:**
             ```bash
-            # Set your database credentials
-            export REDSHIFT_HOST="dataeng-prod.cqyxh8rl6vlx.us-west-2.redshift.amazonaws.com"
-            export REDSHIFT_DATABASE="your_database"
-            export REDSHIFT_USERNAME="your_username"
-            export REDSHIFT_PASSWORD="your_password"
-            export REDSHIFT_PORT="5439"
+            # Set your Snowflake credentials
+            export SNOWFLAKE_ACCOUNT="your-account.snowflakecomputing.com"
+            export SNOWFLAKE_USER="your_username"
+            export SNOWFLAKE_PASSWORD="your_password"
+            export SNOWFLAKE_DATABASE="data_warehouse_rc1"
+            export SNOWFLAKE_SCHEMA="bi"
+            export SNOWFLAKE_WAREHOUSE="COMPUTE_WH"
+            export SNOWFLAKE_ROLE="your_role"
             export OPENAI_API_KEY="your_api_key"
             
             # Start the app
@@ -728,15 +731,15 @@ def main():
             st.markdown("""
             **Common Issues:**
             
-            - **VPN Not Connected**: Connect to your company VPN first
-            - **Wrong Credentials**: Check your database username/password
-            - **Network Issues**: Ensure you can reach the database host
-            - **Firewall**: Check if your firewall allows the connection
+            - **Wrong Credentials**: Check your Snowflake username/password
+            - **Account Name**: Verify your Snowflake account identifier
+            - **Network Issues**: Ensure you can reach Snowflake
+            - **Role/Warehouse**: Confirm you have access to the specified role and warehouse
             
             **Test Connection:**
             ```bash
-            # Test database connection
-            psql -h dataeng-prod.cqyxh8rl6vlx.us-west-2.redshift.amazonaws.com -p 5439 -U your_username -d your_database
+            # Test with Snowflake CLI (snowsql)
+            snowsql -a your-account -u your_username -d data_warehouse_rc1
             ```
             """)
         
@@ -822,7 +825,7 @@ def main():
     - 📈 Quick data visualizations
     """)
     
-    if status["redshift_accessible"]:
+    if status["snowflake_accessible"]:
         st.success("🎯 **Connected to real Gusto data!**")
     else:
         st.info("🎮 **Demo mode with realistic sample data**")
