@@ -231,6 +231,25 @@ WHERE event_debit_date >= '2023-05-01'
 LIMIT 100;
 ```
 
+### Risk Tier Information
+For general risk tier queries, always use `combined_risk_tier` from the `zenpayroll_production_no_pii.customer_risk_tiers` table.
+
+Example:
+```sql
+-- Get companies with high risk tiers
+SELECT company_id, combined_risk_tier, tier_date
+FROM zenpayroll_production_no_pii.customer_risk_tiers
+WHERE combined_risk_tier > 5
+LIMIT 100;
+
+-- Get specific risk types
+SELECT company_id, fraud_risk_tier, credit_risk_tier, combined_risk_tier
+FROM zenpayroll_production_no_pii.customer_risk_tiers
+WHERE company_id = 12345
+ORDER BY tier_date DESC
+LIMIT 10;
+```
+
 ## 🛠️ Development
 
 ### Project Structure

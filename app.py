@@ -334,6 +334,10 @@ def generate_sql_with_ai(query: str) -> str:
             - Gusto's fiscal year starts in May (FY starts May 1st)
             - When asked about fiscal year periods, calculate accordingly (e.g., FY2024 = May 2023 - April 2024)
             - For "current fiscal year", use May of previous calendar year through April of current calendar year
+        13. IMPORTANT: For risk tier information:
+            - When asked about "risk tier" or "risk score", ALWAYS use combined_risk_tier column
+            - Use table: zenpayroll_production_no_pii.customer_risk_tiers
+            - For specific risk types, use fraud_risk_tier or credit_risk_tier
         
         Generate SQL:
         """
