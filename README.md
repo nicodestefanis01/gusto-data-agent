@@ -2,12 +2,12 @@
 
 🚀 **AI-powered SQL generation for Gusto data warehouse with real database connectivity**
 
-This production version connects to actual Gusto Snowflake data and uses OpenAI for intelligent SQL generation.
+This production version connects to actual Gusto Redshift data and uses OpenAI for intelligent SQL generation.
 
 ## 🎯 Features
 
 - **🧠 AI-powered SQL generation** via OpenAI GPT-3.5-turbo
-- **🔗 Direct Snowflake connectivity** to Gusto data warehouse
+- **🔗 Direct Redshift connectivity** to Gusto data warehouse
 - **📊 Access to all Gusto warehouse tables** (bi.companies, credit_delinquencies, etc.)
 - **🔒 Read-only database safety** with connection validation
 - **💾 CSV export capabilities** for analysis results
@@ -33,7 +33,7 @@ python setup_production.py
 
 This will guide you through setting up:
 - **OpenAI API Key** for SQL generation
-- **Snowflake credentials** for database access
+- **Redshift credentials** for database access
 
 ### 3. Run the Application
 
@@ -56,31 +56,27 @@ The app requires two sets of credentials:
 OPENAI_API_KEY=sk-your-openai-api-key-here
 ```
 
-### Snowflake Database
+### Redshift Database
 ```bash
-SNOWFLAKE_ACCOUNT=your-account.snowflakecomputing.com
-SNOWFLAKE_USER=your_username
-SNOWFLAKE_PASSWORD=your_password
-SNOWFLAKE_DATABASE=data_warehouse_rc1
-SNOWFLAKE_SCHEMA=bi
-SNOWFLAKE_WAREHOUSE=COMPUTE_WH
-SNOWFLAKE_ROLE=your_role
+REDSHIFT_HOST=your-cluster.redshift.amazonaws.com
+REDSHIFT_DATABASE=warehouse
+REDSHIFT_USERNAME=your_username
+REDSHIFT_PASSWORD=your_password
+REDSHIFT_PORT=5439
 ```
 
-## 📊 Getting Snowflake Credentials
+## 📊 Getting Redshift Credentials
 
 Contact the **Gusto Data Team** to request:
 - Read-only access to the main data warehouse
-- Connection details for Snowflake
+- Connection details for the Redshift cluster
 - Mention you're building a SQL agent for ad-hoc data analysis
 
 **What to ask for:**
-1. Snowflake account identifier
-2. Database name (e.g., `data_warehouse_rc1`)
-3. Schema name (e.g., `bi`)
-4. Read-only username and password
-5. Warehouse name (e.g., `COMPUTE_WH`)
-6. Role with appropriate permissions
+1. Redshift cluster endpoint
+2. Database name (likely `warehouse` or similar)
+3. Read-only username and password
+4. Port (usually 5439)
 
 ## 🎮 Operating Modes
 
@@ -88,22 +84,22 @@ The app automatically detects available credentials and operates in different mo
 
 ### ✅ Production Mode
 - **OpenAI**: ✅ Configured
-- **Snowflake**: ✅ Configured
+- **Redshift**: ✅ Configured
 - **Result**: Full AI-powered SQL generation with real Gusto data
 
 ### ⚠️ Partial Mode - AI Only
 - **OpenAI**: ✅ Configured  
-- **Snowflake**: ❌ Not configured
+- **Redshift**: ❌ Not configured
 - **Result**: AI-generated SQL with mock data for testing
 
 ### ⚠️ Partial Mode - Database Only
 - **OpenAI**: ❌ Not configured
-- **Snowflake**: ✅ Configured  
+- **Redshift**: ✅ Configured  
 - **Result**: Template SQL with real Gusto data
 
 ### 🎮 Demo Mode
 - **OpenAI**: ❌ Not configured
-- **Snowflake**: ❌ Not configured
+- **Redshift**: ❌ Not configured
 - **Result**: Template SQL with mock data (same as demo version)
 
 ## 🗄️ Available Tables
@@ -122,9 +118,6 @@ The agent understands these Gusto warehouse tables:
 ### Compliance Tables
 - `bi.penalty_cases` - Penalty cases and compliance issues
 - `bi.penalty_groups` - Types and categories of penalties
-
-### Risk Tables
-- `zenpayroll_production_no_pii.customer_risk_tiers` - Customer risk tier information (combined, fraud, and credit risk tiers)
 
 ### Activity Tables
 - `zenpayroll_production_no.session_events` - User session events
@@ -145,9 +138,6 @@ Try these natural language queries:
 "Find ATO-related payments with losses greater than $500"
 "Show total payments for fiscal year 2024"
 "What were the losses in the current fiscal year?"
-"Show me companies with high combined risk tiers"
-"List fraud risk tiers by company for the last month"
-"Find companies with credit risk tier changes"
 ```
 
 ## 📋 Important Data Rules
@@ -231,45 +221,6 @@ WHERE event_debit_date >= '2023-05-01'
 LIMIT 100;
 ```
 
-### Risk Tier Information
-For general risk tier queries, always use `combined_risk_tier` from the `zenpayroll_production_no_pii.customer_risk_tiers` table.
-
-**Important**: The `combined_risk_tier` column format is always **"Tier A"**, **"Tier B"**, **"Tier C"**, etc. (not just letters or numbers).
-
-Example:
-```sql
--- Get companies with specific risk tier
-SELECT company_id, combined_risk_tier, tier_date
-FROM zenpayroll_production_no_pii.customer_risk_tiers
-WHERE combined_risk_tier = 'Tier A'
-LIMIT 100;
-
--- Get specific risk types
-SELECT company_id, fraud_risk_tier, credit_risk_tier, combined_risk_tier
-FROM zenpayroll_production_no_pii.customer_risk_tiers
-WHERE company_id = 12345
-ORDER BY tier_date DESC
-LIMIT 10;
-
--- Join with companies table
-SELECT 
-    c.name, 
-    c.filing_state,
-    crt.combined_risk_tier,
-    crt.fraud_risk_tier,
-    crt.tier_date
-FROM zenpayroll_production_no_pii.customer_risk_tiers crt
-JOIN bi.companies c ON crt.company_id = c.id
-WHERE crt.combined_risk_tier IN ('Tier A', 'Tier B')
-ORDER BY crt.tier_date DESC
-LIMIT 100;
-```
-
-**Important Join Rule**: When joining `customer_risk_tiers` with `bi.companies`, always use:
-```sql
-customer_risk_tiers.company_id = companies.id
-```
-
 ## 🛠️ Development
 
 ### Project Structure
@@ -303,12 +254,10 @@ python -m streamlit run app.py
 
 ## 🆘 Troubleshooting
 
-### "Snowflake connection failed"
+### "Redshift connection failed"
 1. Verify credentials with your data team
-2. Check your Snowflake account identifier is correct
-3. Ensure you have network access to Snowflake
-4. Verify your role and warehouse permissions
-5. Test connection with `python setup_production.py test`
+2. Check if your IP is whitelisted for Redshift access
+3. Test connection with `python setup_production.py test`
 
 ### "OpenAI API error"
 1. Verify your API key starts with `sk-`
