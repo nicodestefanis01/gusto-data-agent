@@ -119,6 +119,14 @@ The agent understands these Gusto warehouse tables:
 - `bi.penalty_cases` - Penalty cases and compliance issues
 - `bi.penalty_groups` - Types and categories of penalties
 
+### Risk Tables
+- `zenpayroll_production_no_pii.customer_risk_tiers` - Customer risk tier classifications (fraud, credit, combined)
+- `zenpayroll_production_no_pii.onboarding_risk_scores` - Onboarding risk assessment scores
+- `bi.risk_onboarding` - Risk and compliance data during onboarding
+- `zenpayroll_production_no_pii.risk_onboarding_ai_agent_decisions` - AI-powered risk decisions during onboarding
+- `zenpayroll_production_no_pii.cached_payroll_blockers` - Payroll processing blockers
+- `bi.company_approval_details` - Company approval status and blockers
+
 ### Activity Tables
 - `zenpayroll_production_no.session_events` - User session events
 
@@ -138,6 +146,11 @@ Try these natural language queries:
 "Find ATO-related payments with losses greater than $500"
 "Show total payments for fiscal year 2024"
 "What were the losses in the current fiscal year?"
+"Show companies with high onboarding risk scores"
+"List AI agent decisions for company approvals this month"
+"Find companies with payroll blockers"
+"Show approval details for pending companies"
+"What are the risk states for companies created this week?"
 ```
 
 ## 📋 Important Data Rules
