@@ -308,8 +308,15 @@ def generate_sql_with_ai(query: str) -> str:
         # Create schema context
         schema_context = "\n".join([f"{table}: {', '.join(columns)}" for table, columns in TABLE_SCHEMAS.items()])
         
+        # Create explicit table list
+        available_tables = list(TABLE_SCHEMAS.keys())
+        table_list = ", ".join(available_tables)
+        
         prompt = f"""
         You are a SQL expert for Gusto's data warehouse. Generate SQL queries based on natural language requests.
+        
+        CRITICAL: You MUST ONLY use these exact tables (do NOT make up or assume other tables exist):
+        {table_list}
         
         Available tables and columns:
         {schema_context}
@@ -317,8 +324,9 @@ def generate_sql_with_ai(query: str) -> str:
         User query: {query}
         
         Rules:
-        1. Use ONLY the columns listed above
-        2. Use proper table names with schema (e.g., bi.companies)
+        0. CRITICAL: ONLY use tables from the list above. If a table is not listed, it does NOT exist. Do NOT hallucinate or invent table names.
+        1. Use ONLY the columns listed above for each table
+        2. Use proper table names with schema exactly as shown (e.g., bi.companies, bi_reporting.gusto_payments_and_losses)
         3. Add LIMIT 100 to prevent large results
         4. Use proper SQL syntax for Redshift
         5. For time-based queries, use DATE_TRUNC for aggregations
@@ -357,9 +365,18 @@ def generate_sql_with_ai(query: str) -> str:
         
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": prompt}],
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are a precise SQL generator. You MUST ONLY use tables and columns that are explicitly provided. NEVER invent, assume, or hallucinate table names. If you cannot answer a query with the available tables, say so."
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
             max_tokens=500,
-            temperature=0.1
+            temperature=0
         )
         
         sql = response.choices[0].message.content.strip()
@@ -370,7 +387,28 @@ def generate_sql_with_ai(query: str) -> str:
         if sql.endswith('```'):
             sql = sql[:-3]
         
-        return sql.strip()
+        sql = sql.strip()
+        
+        # Validate that SQL only uses known tables
+        sql_upper = sql.upper()
+        for table in TABLE_SCHEMAS.keys():
+            # Remove valid table names from the SQL to check for invalid ones
+            sql_upper = sql_upper.replace(table.upper(), '')
+        
+        # Check for common patterns that might indicate hallucinated tables
+        # Look for FROM/JOIN followed by schema.table patterns that we haven't removed
+        import re
+        suspicious_patterns = re.findall(r'(?:FROM|JOIN)\s+([a-zA-Z_]+\.[a-zA-Z_]+)', sql, re.IGNORECASE)
+        
+        if suspicious_patterns:
+            # Check if any of these patterns are not in our known tables
+            known_tables_upper = [t.upper() for t in TABLE_SCHEMAS.keys()]
+            for pattern in suspicious_patterns:
+                if pattern.upper() not in known_tables_upper:
+                    st.warning(f"⚠️ Generated SQL references unknown table: {pattern}. Please rephrase your query or verify the table exists.")
+                    return None
+        
+        return sql
         
     except Exception as e:
         st.error(f"AI SQL generation failed: {e}")
