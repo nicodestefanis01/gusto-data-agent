@@ -265,6 +265,39 @@ WHERE ro.risk_state IN (2,3,7,9,12,13,14,15,17,20,22)
 LIMIT 100;
 ```
 
+### Risk Onboarding Agent Decisions
+For queries about **agent decisions**, **AI decisions**, **risk analyst decisions**, or **trust analyst decisions** during onboarding, always use the `zenpayroll_production_no_pii.risk_onboarding_ai_agent_decisions` table.
+
+**Key columns:**
+- `decision` - Overall decision
+- `status` - Decision status
+- `trust_analyst_decision` - Trust analyst's decision
+- `trust_analyst_confidence` - Confidence level for trust decision
+- `risk_analyst_decision` - Risk analyst's decision
+- `risk_analyst_confidence` - Confidence level for risk decision
+- `version` - Model version
+- `company_id` - Company identifier
+
+Example:
+```sql
+-- Get recent AI agent decisions
+SELECT company_id, decision, status, 
+       trust_analyst_decision, trust_analyst_confidence,
+       risk_analyst_decision, risk_analyst_confidence,
+       created_at
+FROM zenpayroll_production_no_pii.risk_onboarding_ai_agent_decisions
+ORDER BY created_at DESC
+LIMIT 100;
+
+-- Get decisions with company details
+SELECT d.company_id, c.name, d.decision, d.status,
+       d.trust_analyst_decision, d.risk_analyst_decision
+FROM zenpayroll_production_no_pii.risk_onboarding_ai_agent_decisions d
+JOIN bi.companies c ON d.company_id = c.id
+WHERE d.created_at >= CURRENT_DATE - INTERVAL '30 days'
+LIMIT 100;
+```
+
 ## 🛠️ Development
 
 ### Project Structure

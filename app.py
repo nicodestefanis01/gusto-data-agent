@@ -359,6 +359,10 @@ def generate_sql_with_ai(query: str) -> str:
             - When asked about fraud companies or fraud-related information, ALWAYS filter by risk_state IN (2,3,7,9,12,13,14,15,17,20,22)
             - Use the bi.risk_onboarding or bi.company_approval_details table for risk_state
             - Example: WHERE risk_state IN (2,3,7,9,12,13,14,15,17,20,22)
+        16. IMPORTANT: For risk onboarding agent decisions:
+            - When asked about "agent decisions", "AI decisions", "risk analyst decisions", "trust analyst decisions", or "onboarding decisions"
+            - ALWAYS use table: zenpayroll_production_no_pii.risk_onboarding_ai_agent_decisions
+            - Available columns: decision, status, trust_analyst_decision, trust_analyst_confidence, risk_analyst_decision, risk_analyst_confidence, version, company_id
         
         Generate SQL:
         """
