@@ -189,6 +189,7 @@ import random
 from openai import OpenAI
 import ipaddress
 from typing import List
+from validated_queries import get_example_queries_text
 
 # Load environment variables
 from dotenv import load_dotenv
@@ -312,6 +313,9 @@ def generate_sql_with_ai(query: str) -> str:
         available_tables = list(TABLE_SCHEMAS.keys())
         table_list = ", ".join(available_tables)
         
+        # Get validated example queries for few-shot learning
+        example_queries = get_example_queries_text()
+        
         prompt = f"""
         You are a SQL expert for Gusto's data warehouse. Generate SQL queries based on natural language requests.
         
@@ -320,6 +324,8 @@ def generate_sql_with_ai(query: str) -> str:
         
         Available tables and columns:
         {schema_context}
+        
+        {example_queries}
         
         User query: {query}
         

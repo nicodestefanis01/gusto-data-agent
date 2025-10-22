@@ -318,12 +318,50 @@ LIMIT 100;
 ```
 gusto-data-agent-production/
 ├── app.py                 # Main Streamlit application
+├── validated_queries.py   # Validated SQL examples for AI training
 ├── setup_production.py    # Interactive configuration setup
 ├── requirements.txt       # Python dependencies
 ├── .env.template         # Environment variable template
 ├── .env                  # Your actual credentials (created by setup)
 └── README.md            # This file
 ```
+
+### Adding Validated Queries for AI Training
+
+GAIA uses **few-shot learning** - it learns from validated query examples you provide. This dramatically improves accuracy by teaching the AI:
+- Real field values (not hallucinated ones)
+- Common join patterns
+- Business logic specific to Gusto
+- Proper filtering conditions
+
+**To add new training examples:**
+
+1. Open `validated_queries.py`
+2. Add your validated query to the `VALIDATED_QUERIES` list:
+
+```python
+VALIDATED_QUERIES = [
+    # ... existing queries ...
+    
+    # Your new query
+    (
+        "Natural language description",
+        """SELECT your, validated, sql
+FROM your_tables
+WHERE your_conditions
+LIMIT 100;"""
+    ),
+]
+```
+
+**Best practices:**
+- Only add queries that have been tested and validated in production
+- Include queries that demonstrate common patterns your team uses
+- Cover different table combinations and join patterns
+- Include examples with specific field values (risk_state values, tier formats, etc.)
+- More examples = better AI performance
+
+The AI will automatically learn from these patterns when generating new queries!
 
 ### Testing
 ```bash
