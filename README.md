@@ -155,6 +155,20 @@ Try these natural language queries:
 
 ## 📋 Important Data Rules
 
+### ⚠️ No Value Hallucination
+The AI is configured to **never make up or assume specific field values**. It will only use:
+- Date ranges and time periods (e.g., `created_at >= '2024-01-01'`)
+- Boolean flags (e.g., `is_active = true`, `ato_flag = false`)
+- Specific values you provide (e.g., `filing_state = 'CA'` if you ask for California)
+- Wildcards for pattern matching (e.g., `name LIKE '%search%'`)
+
+**The AI will NOT:**
+- Invent company IDs (e.g., `WHERE company_id = 12345`)
+- Make up company names (e.g., `WHERE name = 'Acme Corp'`)
+- Guess at specific values unless you provide them
+
+This ensures all queries return real data based on actual patterns, not fictitious values.
+
 ### Loss Transaction Types
 When querying loss transactions in `bi_reporting.gusto_payments_and_losses` or `bi.credit_delinquencies`:
 

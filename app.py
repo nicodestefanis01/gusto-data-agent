@@ -326,40 +326,46 @@ def generate_sql_with_ai(query: str) -> str:
         Rules:
         0. CRITICAL: ONLY use tables from the list above. If a table is not listed, it does NOT exist. Do NOT hallucinate or invent table names.
         1. Use ONLY the columns listed above for each table
-        2. Use proper table names with schema exactly as shown (e.g., bi.companies, bi_reporting.gusto_payments_and_losses)
-        3. Add LIMIT 100 to prevent large results
-        4. Use proper SQL syntax for Redshift
-        5. For time-based queries, use DATE_TRUNC for aggregations
-        6. For time-based aggregations, ALWAYS add ORDER BY time_column DESC to show most recent first
-        7. For monthly/weekly/daily aggregations, sort by the time period in descending order
-        8. IMPORTANT: For bi_reporting.gusto_payments_and_losses table, ALWAYS use event_debit_date as the date column for time-based queries
-        9. IMPORTANT: For filtering loss transactions:
+        2. CRITICAL: Do NOT assume or make up values for WHERE clauses. Use variables, ranges, or wildcards (LIKE '%...%') when specific values are unknown.
+           - BAD: WHERE company_id = 12345 (unless user explicitly provided this ID)
+           - BAD: WHERE name = 'Acme Corp' (unless user explicitly provided this name)
+           - GOOD: WHERE created_at >= '2024-01-01'
+           - GOOD: WHERE filing_state = 'CA' (if user asked for California)
+           - GOOD: WHERE name LIKE '%search_term%' (for partial matches)
+        3. Use proper table names with schema exactly as shown (e.g., bi.companies, bi_reporting.gusto_payments_and_losses)
+        4. Add LIMIT 100 to prevent large results
+        5. Use proper SQL syntax for Redshift
+        6. For time-based queries, use DATE_TRUNC for aggregations
+        7. For time-based aggregations, ALWAYS add ORDER BY time_column DESC to show most recent first
+        8. For monthly/weekly/daily aggregations, sort by the time period in descending order
+        9. IMPORTANT: For bi_reporting.gusto_payments_and_losses table, ALWAYS use event_debit_date as the date column for time-based queries
+        10. IMPORTANT: For filtering loss transactions:
            - Fraud loss transactions: use credit_loss_flag = false (or is_credit_loss = false for bi.credit_delinquencies)
            - Credit loss transactions: use credit_loss_flag = true (or is_credit_loss = true for bi.credit_delinquencies)
-        10. IMPORTANT: For bi.companies table:
+        11. IMPORTANT: For bi.companies table:
             - filing_state is ALWAYS a 2-letter state abbreviation (e.g., 'CA', 'NY', 'TX')
             - When filtering by state, use uppercase abbreviations like WHERE filing_state = 'CA'
-        11. IMPORTANT: For ATO (Account Takeover) related payment information:
+        12. IMPORTANT: For ATO (Account Takeover) related payment information:
             - ALWAYS use ato_flag column to filter ATO-related transactions
             - ATO transactions: WHERE ato_flag = true
             - Non-ATO transactions: WHERE ato_flag = false
-        12. IMPORTANT: Fiscal Year at Gusto:
+        13. IMPORTANT: Fiscal Year at Gusto:
             - Gusto's fiscal year starts in May (FY starts May 1st)
             - When asked about fiscal year periods, calculate accordingly (e.g., FY2024 = May 2023 - April 2024)
             - For "current fiscal year", use May of previous calendar year through April of current calendar year
-        13. IMPORTANT: For risk tier information:
+        14. IMPORTANT: For risk tier information:
             - When asked about "risk tier" or "risk score", ALWAYS use combined_risk_tier column
             - Use table: zenpayroll_production_no_pii.customer_risk_tiers
             - For specific risk types, use fraud_risk_tier or credit_risk_tier
             - The combined_risk_tier format is always "Tier A", "Tier B", "Tier C", etc. (not just letters or numbers)
-        14. IMPORTANT: For joining customer_risk_tiers with companies:
+        15. IMPORTANT: For joining customer_risk_tiers with companies:
             - Join condition: customer_risk_tiers.company_id = companies.id
             - Example: FROM zenpayroll_production_no_pii.customer_risk_tiers JOIN bi.companies ON customer_risk_tiers.company_id = companies.id
-        15. IMPORTANT: For fraud companies:
+        16. IMPORTANT: For fraud companies:
             - When asked about fraud companies or fraud-related information, ALWAYS filter by risk_state IN (2,3,7,9,12,13,14,15,17,20,22)
             - Use the bi.risk_onboarding or bi.company_approval_details table for risk_state
             - Example: WHERE risk_state IN (2,3,7,9,12,13,14,15,17,20,22)
-        16. IMPORTANT: For risk onboarding agent decisions:
+        17. IMPORTANT: For risk onboarding agent decisions:
             - When asked about "agent decisions", "AI decisions", "risk analyst decisions", "trust analyst decisions", or "onboarding decisions"
             - ALWAYS use table: zenpayroll_production_no_pii.risk_onboarding_ai_agent_decisions
             - Available columns: decision, status, trust_analyst_decision, trust_analyst_confidence, risk_analyst_decision, risk_analyst_confidence, version, company_id
@@ -372,7 +378,7 @@ def generate_sql_with_ai(query: str) -> str:
             messages=[
                 {
                     "role": "system",
-                    "content": "You are a precise SQL generator. You MUST ONLY use tables and columns that are explicitly provided. NEVER invent, assume, or hallucinate table names. If you cannot answer a query with the available tables, say so."
+                    "content": "You are a precise SQL generator. You MUST ONLY use tables and columns that are explicitly provided. NEVER invent, assume, or hallucinate table names OR field values. Do not make up company IDs, names, or other specific values unless explicitly provided by the user. Use date ranges, boolean flags, and wildcards instead of inventing specific values. If you cannot answer a query with the available tables, say so."
                 },
                 {
                     "role": "user",
