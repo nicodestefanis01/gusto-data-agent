@@ -347,6 +347,10 @@ def generate_sql_with_ai(query: str) -> str:
         14. IMPORTANT: For joining customer_risk_tiers with companies:
             - Join condition: customer_risk_tiers.company_id = companies.id
             - Example: FROM zenpayroll_production_no_pii.customer_risk_tiers JOIN bi.companies ON customer_risk_tiers.company_id = companies.id
+        15. IMPORTANT: For fraud companies:
+            - When asked about fraud companies or fraud-related information, ALWAYS filter by risk_state IN (2,3,7,9,12,13,14,15,17,20,22)
+            - Use the bi.risk_onboarding or bi.company_approval_details table for risk_state
+            - Example: WHERE risk_state IN (2,3,7,9,12,13,14,15,17,20,22)
         
         Generate SQL:
         """

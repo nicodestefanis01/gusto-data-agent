@@ -234,6 +234,37 @@ WHERE event_debit_date >= '2023-05-01'
 LIMIT 100;
 ```
 
+### Fraud Company Identification
+When querying fraud companies or fraud-related information, **only consider companies with specific risk states**.
+
+**Fraud Risk States:** `2, 3, 7, 9, 12, 13, 14, 15, 17, 20, 22`
+
+These risk states are available in:
+- `bi.risk_onboarding` table
+- `bi.company_approval_details` table
+
+Example:
+```sql
+-- Get fraud companies
+SELECT company_id, risk_state, risk_state_description
+FROM bi.risk_onboarding
+WHERE risk_state IN (2,3,7,9,12,13,14,15,17,20,22)
+LIMIT 100;
+
+-- Get fraud companies with approval details
+SELECT company_id, risk_state, approval_status, auto_approval_blockers
+FROM bi.company_approval_details
+WHERE risk_state IN (2,3,7,9,12,13,14,15,17,20,22)
+LIMIT 100;
+
+-- Join with companies table for full details
+SELECT c.id, c.name, ro.risk_state, ro.risk_state_description, ro.is_fraud
+FROM bi.companies c
+JOIN bi.risk_onboarding ro ON c.id = ro.company_id
+WHERE ro.risk_state IN (2,3,7,9,12,13,14,15,17,20,22)
+LIMIT 100;
+```
+
 ## 🛠️ Development
 
 ### Project Structure
