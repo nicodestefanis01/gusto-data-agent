@@ -290,13 +290,21 @@ def check_system_status():
 def get_redshift_connection():
     """Get Redshift connection"""
     try:
-        return psycopg2.connect(
+        conn = psycopg2.connect(
             host=os.getenv('REDSHIFT_HOST'),
             database=os.getenv('REDSHIFT_DATABASE'),
             user=os.getenv('REDSHIFT_USERNAME'),
             password=os.getenv('REDSHIFT_PASSWORD'),
             port=os.getenv('REDSHIFT_PORT', '5439')
         )
+        
+        # Set search path to prioritize bi and bi_reporting schemas
+        # Always use bi, bi_reporting first regardless of personal schema
+        cursor = conn.cursor()
+        cursor.execute("SET search_path TO bi, bi_reporting, public")
+        cursor.close()
+        
+        return conn
     except Exception as e:
         st.error(f"Database connection failed: {e}")
         return None
@@ -593,7 +601,7 @@ def main():
     
     # Page config with modern styling
     st.set_page_config(
-        page_title="GAIA - Gusto AI Analyst",
+        page_title="7_🤖_GAIA",
         page_icon="🤖",
         layout="wide",
         initial_sidebar_state="collapsed"
