@@ -347,7 +347,7 @@ def generate_sql_with_ai(query: str) -> str:
            - GOOD: WHERE filing_state = 'CA' (if user asked for California)
            - GOOD: WHERE name LIKE '%search_term%' (for partial matches)
         3. Use proper table names with schema exactly as shown (e.g., bi.companies, bi_reporting.gusto_payments_and_losses)
-        4. Add LIMIT 100 to prevent large results
+        4. Add LIMIT 1000 by default unless the user specifies a different limit
         5. Use proper SQL syntax for Redshift
         6. For time-based queries, use DATE_TRUNC for aggregations
         7. For time-based aggregations, ALWAYS add ORDER BY time_column DESC to show most recent first
@@ -383,6 +383,13 @@ def generate_sql_with_ai(query: str) -> str:
             - When asked about "agent decisions", "AI decisions", "risk analyst decisions", "trust analyst decisions", or "onboarding decisions"
             - ALWAYS use table: zenpayroll_production_no_pii.risk_onboarding_ai_agent_decisions
             - Available columns: decision, status, trust_analyst_decision, trust_analyst_confidence, risk_analyst_decision, risk_analyst_confidence, version, company_id
+        18. CRITICAL - PII PROTECTION: NEVER SELECT the 'name' column from bi.companies or any other table to prevent exposing Personally Identifiable Information (PII). Always use company_id instead.
+        19. CRITICAL - DATA TYPE CASTING: ALWAYS cast company_id and event_id as BIGINT to ensure proper data type handling.
+            - Example: SELECT company_id::BIGINT, event_id::BIGINT
+            - Apply this to all queries that use company_id or event_id
+        20. IMPORTANT - LOSS AMOUNT DEFAULT: When the user asks about "loss" without specifying gross or net, ALWAYS default to net_loss_amount from bi_reporting.gusto_payments_and_losses table.
+            - If user explicitly asks for "gross loss", use event_gross_amount
+            - If user just says "loss", use net_loss_amount
         
         Generate SQL:
         """
@@ -963,6 +970,50 @@ def main():
         for idx, example in enumerate(examples):
             with example_cols[idx % 2]:
                 if st.button(f"💬 {example}", key=f"example_{idx}", use_container_width=True):
+                    # Add user message to chat history
+                    st.session_state.messages.append({"role": "user", "content": example})
+                    
+                    # Generate SQL and execute
+                    with st.spinner("🤖 Generating SQL..."):
+                        sql = generate_sql_with_ai(example)
+                    
+                    if sql:
+                        with st.spinner("📊 Executing query..."):
+                            df, error = execute_sql(sql)
+                        
+                        if error:
+                            error_msg = f"❌ Query failed: {error}"
+                            st.session_state.messages.append({
+                                "role": "assistant",
+                                "content": error_msg,
+                                "sql": sql
+                            })
+                        elif df is not None and not df.empty:
+                            result_msg = f"✅ Found {len(df)} results"
+                            fig = create_visualization(df, example)
+                            message_data = {
+                                "role": "assistant",
+                                "content": result_msg,
+                                "sql": sql,
+                                "dataframe": df
+                            }
+                            if fig:
+                                message_data["figure"] = fig
+                            st.session_state.messages.append(message_data)
+                        else:
+                            no_results_msg = "ℹ️ Query executed successfully but returned no results."
+                            st.session_state.messages.append({
+                                "role": "assistant",
+                                "content": no_results_msg,
+                                "sql": sql
+                            })
+                    else:
+                        error_msg = "❌ Could not generate SQL query. Please try rephrasing your question."
+                        st.session_state.messages.append({
+                            "role": "assistant",
+                            "content": error_msg
+                        })
+                    
                     st.rerun()
     
     # Footer
