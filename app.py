@@ -445,6 +445,26 @@ def generate_sql_with_ai(query: str) -> str:
         st.error(f"AI SQL generation failed: {e}")
         return None
 
+def format_dataframe_for_display(df: pd.DataFrame) -> pd.DataFrame:
+    """Format DataFrame to remove commas from ID columns"""
+    if df is None or df.empty:
+        return df
+    
+    # Create a copy to avoid modifying the original
+    df_display = df.copy()
+    
+    # Find all ID columns (company_id, event_id, etc.)
+    id_columns = [col for col in df_display.columns if 'id' in col.lower()]
+    
+    for col in id_columns:
+        if pd.api.types.is_numeric_dtype(df_display[col]):
+            # Convert to int64 first (handles nulls), then to string to prevent comma formatting
+            df_display[col] = df_display[col].fillna(0).astype('int64').astype(str)
+            # Replace '0' with empty string if it was originally null
+            df_display[col] = df_display[col].replace('0', '')
+    
+    return df_display
+
 def execute_sql(sql: str):
     """Execute SQL and return results"""
     try:
@@ -466,6 +486,7 @@ def execute_sql(sql: str):
         
         # Convert to DataFrame
         df = pd.DataFrame(results, columns=columns)
+        
         return df, None
         
     except Exception as e:
@@ -879,7 +900,9 @@ def main():
             
             # Display results if present
             if "dataframe" in message:
-                st.dataframe(message["dataframe"])
+                # Format dataframe to remove commas from ID columns
+                df_display = format_dataframe_for_display(message["dataframe"])
+                st.dataframe(df_display)
                 
                 # Display visualization if present
                 if "figure" in message:
@@ -921,8 +944,9 @@ def main():
                     result_msg = f"✅ Found {len(df)} results"
                     st.markdown(result_msg)
                     
-                    # Display dataframe
-                    st.dataframe(df)
+                    # Display dataframe with formatted IDs (no commas)
+                    df_display = format_dataframe_for_display(df)
+                    st.dataframe(df_display)
                     
                     # Create visualization
                     fig = create_visualization(df, prompt)
